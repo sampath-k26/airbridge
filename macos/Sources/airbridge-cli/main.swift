@@ -24,6 +24,7 @@ struct Options {
     var name = "airbridge-cli"
     var repeatCount = 1
     var transferId: String?
+    var bonjour = false
 }
 
 func emit(_ dict: [String: Any]) {
@@ -56,6 +57,7 @@ while i < args.count {
     case "--name": o.name = next()
     case "--repeat": o.repeatCount = Int(next()) ?? 1
     case "--transfer-id": o.transferId = next()
+    case "--bonjour": o.bonjour = true
     case "--send":
         while i + 1 < args.count, !args[i + 1].hasPrefix("--") { o.send.append(next()) }
     default: fail("unknown option \(args[i])")
@@ -122,7 +124,7 @@ case "listen":
     let done = DispatchSemaphore(value: 0)
     final class RC: @unchecked Sendable { var value: Int32 = 0 }
     let rc = RC()
-    let port = try await listener.start(port: o.port, bonjourName: nil, deviceId: identity.deviceId) { stream in
+    let port = try await listener.start(port: o.port, bonjourName: o.bonjour ? o.name : nil, deviceId: identity.deviceId) { stream in
         Task {
             do {
                 try await stream.waitReady(timeout: 10)

@@ -221,9 +221,11 @@ class SessionManager(
 
     fun disconnect() {
         reconnectJob?.cancel()
-        session?.close()
+        val s = session
         session = null
         _connection.value = Connection.Idle
+        // close() waits (bounded) for queued messages to flush: keep it off the UI thread.
+        s?.let { scope.launch { it.close() } }
     }
 
     fun forget(peer: PeerRecord) {
