@@ -234,8 +234,9 @@ Zero-byte files send `file_begin` and `file_end` with no DATA.
 {"type":"file_failed","transferId":"…","fileId":0,"code":"hash_mismatch","message":"…"}
 ```
 
-The receiver flushes & syncs the temp file, verifies length and SHA-256, and only then
-moves it to its final name. A transfer is complete for the sender when every accepted
+The receiver checks the length, then computes SHA-256 **over the data read back from the
+stored temp file** (so storage faults and resume errors are caught, not only network
+errors), syncs it, and only then moves it to its final name. A transfer is complete for the sender when every accepted
 file has a `file_ok`/`file_failed`; the receiver then sends
 `{"type":"transfer_done","transferId":"…","ok":true}`.
 

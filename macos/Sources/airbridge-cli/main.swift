@@ -23,6 +23,7 @@ struct Options {
     var chunk = ABProtocol.defaultChunkSize
     var name = "airbridge-cli"
     var repeatCount = 1
+    var transferId: String?
 }
 
 func emit(_ dict: [String: Any]) {
@@ -54,6 +55,7 @@ while i < args.count {
     case "--chunk": o.chunk = Int(next()) ?? o.chunk
     case "--name": o.name = next()
     case "--repeat": o.repeatCount = Int(next()) ?? 1
+    case "--transfer-id": o.transferId = next()
     case "--send":
         while i + 1 < args.count, !args[i + 1].hasPrefix("--") { o.send.append(next()) }
     default: fail("unknown option \(args[i])")
@@ -95,7 +97,7 @@ func runSession(_ hs: HandshakeResult) async -> Int32 {
         do {
             let files = try OutgoingFile.collect(o.send.map { URL(fileURLWithPath: $0) })
             for _ in 0..<o.repeatCount {
-                let r = await session.send(files)
+                let r = await session.send(files, transferId: o.transferId ?? UUID().uuidString.lowercased())
                 emit(describe(r))
                 if r.error != nil { rc = 1; break }
             }

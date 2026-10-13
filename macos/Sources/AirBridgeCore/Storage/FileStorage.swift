@@ -159,20 +159,15 @@ final class FSWriter: IncomingFileWriter {
         var remaining = end
         while remaining > 0 {
             let n = Int(min(remaining, 1 << 20))
-            guard let d = try reader.read(upToCount: n), !d.isEmpty else { throw ABError(.resumeInvalid, "Partial file shrank") }
+            let d = try PosixIO.read(reader.fileDescriptor, max: n)
+            guard !d.isEmpty else { throw ABError(.resumeInvalid, "Partial file shrank") }
             try body(d)
             remaining -= UInt64(d.count)
         }
     }
 
     func write(_ data: Data) throws {
-        do { try handle.write(contentsOf: data) } catch {
-            let ns = error as NSError
-            if ns.domain == NSPOSIXErrorDomain && ns.code == Int(ENOSPC) || ns.code == NSFileWriteOutOfSpaceError {
-                throw ABError(.insufficientStorage, "Disk full")
-            }
-            throw ABError(.writeFailed, error.localizedDescription)
-        }
+        try PosixIO.writeAll(handle.fileDescriptor, data)
     }
 
     func finalize() throws -> String {

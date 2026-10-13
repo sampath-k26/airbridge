@@ -14,8 +14,11 @@ svc -a chunk --ei chunk "$CHUNK"
 "$CLI" listen --state "$W/st" --dir "$W/recv" --port 47820 --code AB12C-DE34F --expect 1 --chunk "$CHUNK" \
     --send "$MAC_FILES"/* --name "MacBook Air" > "$W/mac.log" 2>&1 &
 CLIPID=$!
-sleep 1
-URI=$(grep -o '"uri":"[^"]*"' "$W/mac.log" | cut -d'"' -f4 | sed -E "s/h=[^&]*/h=$MAC_HOTSPOT_IP/")
+URI=""
+for _ in $(seq 1 100); do  # first launch of a new binary can take seconds
+  URI=$(grep -o '"uri":"[^"]*"' "$W/mac.log" 2>/dev/null | cut -d'"' -f4 | sed -E "s/h=[^&]*/h=$MAC_HOTSPOT_IP/")
+  [ -n "$URI" ] && break; sleep 0.2
+done
 svc -a connect --es uri "'$URI'"
 for i in $(seq 1 240); do grep -q '"direction":"send"' "$W/mac.log" && break; sleep 0.5; done
 svc -a send --es dir "$PHONE_DIR"

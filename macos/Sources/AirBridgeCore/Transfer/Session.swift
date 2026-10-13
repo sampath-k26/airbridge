@@ -164,7 +164,8 @@ public final class Session: @unchecked Sendable {
         do {
             // Resume: the receiver keeps the prefix; we only need it for the full-file hash.
             while pos < offset {
-                guard let d = try handle.read(upToCount: Int(min(Int64(chunkSize), offset - pos))), !d.isEmpty else {
+                let d = try PosixIO.read(handle.fileDescriptor, max: Int(min(Int64(chunkSize), offset - pos)))
+                guard !d.isEmpty else {
                     throw ABError(.readFailed, "\(file.path) is shorter than expected")
                 }
                 hasher.update(data: d)
@@ -179,7 +180,8 @@ public final class Session: @unchecked Sendable {
             if Task.isCancelled { throw ABError(.cancelled, "Cancelled") }
             let d: Data
             do {
-                guard let r = try handle.read(upToCount: Int(min(Int64(chunkSize), file.size - pos))), !r.isEmpty else {
+                let r = try PosixIO.read(handle.fileDescriptor, max: Int(min(Int64(chunkSize), file.size - pos)))
+                guard !r.isEmpty else {
                     throw ABError(.readFailed, "\(file.path) changed while sending")
                 }
                 d = r
