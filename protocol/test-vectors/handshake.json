@@ -1,0 +1,37 @@
+{
+  "description" : "SPEC §5.3 key schedule and §4.2 records. Private keys are raw P-256 scalars (hex).",
+  "dialerEphPrivate" : "1111111111111111111111111111111111111111111111111111111111111101",
+  "dialerEphSpki" : "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEf6/vJiG6k6150u06YUyvQM7DwvQbN9phCOQ77r+e+yEXRhPWDbOFcrqi2picB9pT1ezTVdvAgUafnhXduRKPlQ==",
+  "dialerIdentityPrivate" : "4444444444444444444444444444444444444444444444444444444444444401",
+  "dialerIdentitySpki" : "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAELFLTAeGJaxUyPU/OqJtYDn+k2ZeG9W4YJun8bugW0fnDN8FvmuaQdCr6CsoP8Z2eDsVYRusppmo3U1uq9T5tfQ==",
+  "dialerPairProof" : "cd6c680b6434a6bf2a4cc5d13dddd698ca804f2586c4d4ed5cb704aa1d52e449",
+  "hello" : "{\"type\":\"hello\",\"proto\":1,\"minProto\":1,\"eph\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEf6/vJiG6k6150u06YUyvQM7DwvQbN9phCOQ77r+e+yEXRhPWDbOFcrqi2picB9pT1ezTVdvAgUafnhXduRKPlQ==\",\"nonce\":\"AAAA\",\"pairing\":true}",
+  "keyDialerToListener" : "dd0c1352397eb281c6b60b9733c5a29571818488f6bddc14e7b4ad373f20f9b8",
+  "keyListenerToDialer" : "c4fd2abfd45fdc36e2d02f91aae2d5028f2224dd69f66d508d7cc16f9c114cfa",
+  "listenerDeviceId" : "1697ed7d7ee03f10163cbcafb835e9c2",
+  "listenerDisplayFingerprint" : "1697 ed7d 7ee0 3f10",
+  "listenerEphPrivate" : "2222222222222222222222222222222222222222222222222222222222222201",
+  "listenerEphSpki" : "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAET31iqiwvh9DCl6qZ0hB8pN/ZsFFcKyyicb4uRjVmRr3U/LlsPEnmaK87ZqKSzUAh3E40DNumNuDDPgRR2WGGvg==",
+  "listenerFingerprint" : "1697ed7d7ee03f10163cbcafb835e9c2ea1d26e654d753c8f9d3a2446e09526a",
+  "listenerIdentityPrivate" : "3333333333333333333333333333333333333333333333333333333333333301",
+  "listenerIdentitySpki" : "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdkCPgteW7XktTHnawONIF0z2tGJi3oLu5xeqG4ncmyxNuyT855mNRNAwSBBEtnpJ4aTuvpefAFg5Dy1VkHGKQw==",
+  "listenerPairProof" : "e46e59e3eb4ec969259ac48c669c20a3262078593035f598663220b7680480e3",
+  "pairingCode" : "ABCDEFGHJK",
+  "records" : [
+    {
+      "ciphertext" : "1cba054dd4e0b4f31e8d0420b2b545dc70b0261bdb8623a14575029fae0b0202",
+      "counter" : 0,
+      "plaintext" : "017b2274797065223a2270696e67227d"
+    },
+    {
+      "ciphertext" : "7650f2dae0dedbf19119b8f3b2ed21714db7e9daf19fcff9a99036933b84487d37c65651ea",
+      "counter" : 1,
+      "plaintext" : "020000000768656c6c6f2066696c65206279746573"
+    }
+  ],
+  "sas" : "248657",
+  "serverAuthSignature" : "30440220562d9a39ee02f908b1130aa3dc6a1604478597e4a2c881a324ea6259b67792c6022040e173db8a4475a3705b2880eb7b7d9ad5fb6eca6f67ee89f54c7b442ffab6d8",
+  "serverHello" : "{\"type\":\"server_hello\",\"proto\":1,\"eph\":\"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAET31iqiwvh9DCl6qZ0hB8pN/ZsFFcKyyicb4uRjVmRr3U/LlsPEnmaK87ZqKSzUAh3E40DNumNuDDPgRR2WGGvg==\",\"nonce\":\"BBBB\"}",
+  "sharedSecret" : "942e92116550bffeb5e40c70471b9cdc839f5a512b460d38b189435693820a3d",
+  "transcriptHash" : "bd7f7c11e24550c3f48035d168fc2bc1238e4a65f0607c5a07efbd0fb5e91ffe"
+}

@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+# Swift / Xcode
+macos/.build/
+macos/.swiftpm/
+macos/dist/
+*.xcuserstate
+xcuserdata/
+DerivedData/
+# Android / Gradle
+android/.gradle/
+android/build/
+android/*/build/
+android/local.properties
+android/.idea/
+android/.kotlin/
+*.iml
+*.apk
+*.aab
+# Test artifacts
+benchmarks/tmp/
+test-files/
