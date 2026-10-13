@@ -74,7 +74,8 @@ Device tests drive the real app through the **debug-only** `DebugControlService`
 | 11-file corpus (Unicode, folders, empty files) both directions | USB `adb reverse` tunnel | ✅ all hashes match; duplicates saved as `(1)` |
 | 100 MB Mac → phone / phone → Mac | hotspot | ✅ 5.7 / 6.3 MB/s, SHA-256 match |
 | Chunk-size benchmark 64 KiB–4 MiB, 100 MB each way | hotspot | ✅ 8/8 verified, 4.8–6.5 MB/s |
-| 1 GB each way | hotspot | see `docs/performance.md` |
+| 1 GiB each way | hotspot | ✅ 5.1 MB/s (Mac → phone, 211.6 s) and 4.6 MB/s (phone → Mac, 232.0 s), both verified; phone app memory flat at 160 MB PSS |
+| macOS app process (GUI build) | loopback | ✅ listens on 47820 and runs the handshake (unpaired peer refused with `auth_failed`); Bonjour advertisement needs the user to allow *Local Network* access (same code advertises correctly from the CLI) |
 | Mac sender killed mid-transfer → restart | hotspot | ✅ phone auto-reconnected; resent 58.7 MB of 104.9 MB; hash match |
 | Mac receiver killed mid-transfer → restart | hotspot | ✅ phone reconnected and resumed its queued send; resent 54.5 MB; hash match |
 | Release (R8) APK launch | — | ✅ cold start 1.06 s, no crash |

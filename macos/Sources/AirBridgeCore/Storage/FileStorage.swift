@@ -91,7 +91,7 @@ public final class FileSystemStorage: ReceiveStorage, @unchecked Sendable {
             try h.truncate(atOffset: UInt64(offset))
             try h.seek(toOffset: UInt64(offset))
             let target = try finalTarget(transferId: transferId, path: path)
-            return FSWriter(handle: h, partURL: part, metaURL: dir.appendingPathComponent("\(file.id).json"),
+            return try FSWriter(handle: h, partURL: part, metaURL: dir.appendingPathComponent("\(file.id).json"),
                             target: target, fm: fm)
         } catch let e as ABError {
             throw e
@@ -140,41 +140,65 @@ public final class FileSystemStorage: ReceiveStorage, @unchecked Sendable {
     }
 }
 
+/// Writes through a raw file descriptor. All fd use is serialised by `lock`: the session
+/// may close a writer (connection lost) while the reader task is still writing, and a
+/// closed `FileHandle` raises an Objective-C exception instead of a Swift error.
 final class FSWriter: IncomingFileWriter {
-    let handle: FileHandle
+    private let lock = ABLock()
+    private var fd: Int32
+    private var position: Int64
     let partURL: URL
     let metaURL: URL
     let target: URL
     let fm: FileManager
-    var closed = false
 
-    init(handle: FileHandle, partURL: URL, metaURL: URL, target: URL, fm: FileManager) {
-        self.handle = handle; self.partURL = partURL; self.metaURL = metaURL; self.target = target; self.fm = fm
+    init(handle: FileHandle, partURL: URL, metaURL: URL, target: URL, fm: FileManager) throws {
+        // Take ownership of a duplicate descriptor so the FileHandle can be released.
+        let dupFd = dup(handle.fileDescriptor)
+        let pos = Int64(try handle.offset())
+        try? handle.close()
+        guard dupFd >= 0 else { throw ABError(.writeFailed, String(cString: strerror(errno))) }
+        fd = dupFd
+        position = pos
+        self.partURL = partURL; self.metaURL = metaURL; self.target = target; self.fm = fm
+    }
+
+    deinit { if fd >= 0 { Darwin.close(fd) } }
+
+    private func withFd<T>(_ body: (Int32) throws -> T) throws -> T {
+        lock.lock(); defer { lock.unlock() }
+        guard fd >= 0 else { throw ABError(.connectionLost, "Writer closed") }
+        return try body(fd)
     }
 
     func readPrefix(_ body: (Data) throws -> Void) throws {
-        let end = try handle.offset()
-        let reader = try FileHandle(forReadingFrom: partURL)
-        defer { try? reader.close() }
+        let end = try withFd { _ in position }
+        let rfd = open(partURL.path, O_RDONLY)
+        guard rfd >= 0 else { throw ABError(.writeFailed, String(cString: strerror(errno))) }
+        defer { Darwin.close(rfd) }
         var remaining = end
         while remaining > 0 {
-            let n = Int(min(remaining, 1 << 20))
-            let d = try PosixIO.read(reader.fileDescriptor, max: n)
+            let d = try PosixIO.read(rfd, max: Int(min(remaining, 1 << 20)))
             guard !d.isEmpty else { throw ABError(.resumeInvalid, "Partial file shrank") }
             try body(d)
-            remaining -= UInt64(d.count)
+            remaining -= Int64(d.count)
         }
     }
 
     func write(_ data: Data) throws {
-        try PosixIO.writeAll(handle.fileDescriptor, data)
+        try withFd { fd in
+            try PosixIO.writeAll(fd, data)
+            position += Int64(data.count)
+        }
     }
 
     func finalize() throws -> String {
         do {
-            try handle.synchronize()
-            try handle.close()
-            closed = true
+            try withFd { fd in
+                if fsync(fd) != 0 { throw ABError(.writeFailed, String(cString: strerror(errno))) }
+                Darwin.close(fd)
+                self.fd = -1
+            }
             let dir = target.deletingLastPathComponent()
             try fm.createDirectory(at: dir, withIntermediateDirectories: true)
             // Exclusive rename: never replaces an existing file. On conflict pick "name (n)".
@@ -198,7 +222,9 @@ final class FSWriter: IncomingFileWriter {
     }
 
     func close(keep: Bool) {
-        if !closed { try? handle.close(); closed = true }
+        lock.lock()
+        if fd >= 0 { Darwin.close(fd); fd = -1 }
+        lock.unlock()
         if !keep {
             try? fm.removeItem(at: partURL)
             try? fm.removeItem(at: metaURL)
