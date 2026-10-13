@@ -31,11 +31,15 @@ public struct OutgoingFile: Sendable, Equatable {
             let v = try url.resourceValues(forKeys: Set(keys))
             if v.isDirectory == true {
                 let base = url.lastPathComponent
+                // Compare resolved paths: the enumerator reports /private/var/... for /var/...
+                let root = url.resolvingSymlinksInPath().standardizedFileURL.pathComponents
                 guard let e = FileManager.default.enumerator(at: url, includingPropertiesForKeys: keys,
                                                              options: [.skipsPackageDescendants]) else { continue }
                 for case let f as URL in e {
                     if f.lastPathComponent == ".DS_Store" { continue }
-                    let rel = f.path.dropFirst(url.path.count).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                    let comps = f.resolvingSymlinksInPath().standardizedFileURL.pathComponents
+                    guard comps.count > root.count, Array(comps.prefix(root.count)) == root else { continue }
+                    let rel = comps.dropFirst(root.count).joined(separator: "/")
                     if let o = try make(f, base + "/" + rel) { out.append(o) }
                 }
             } else if let o = try make(url, url.lastPathComponent) {

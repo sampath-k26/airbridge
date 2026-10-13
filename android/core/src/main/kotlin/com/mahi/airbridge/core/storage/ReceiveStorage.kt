@@ -27,7 +27,7 @@ interface ReceiveStorage {
 }
 
 interface IncomingFileWriter {
-    /** Streams the already-received prefix (resume hashing). */
+    /** Streams the bytes written so far from offset 0 (verifies what is on disk). */
     fun readPrefix(consumer: (ByteArray, Int, Int) -> Unit)
     fun write(buf: ByteArray, off: Int, len: Int)
     /** Syncs and publishes the file under a unique final name; returns its display location. */

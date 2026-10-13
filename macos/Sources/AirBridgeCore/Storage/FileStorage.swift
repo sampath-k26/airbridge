@@ -14,7 +14,7 @@ public protocol ReceiveStorage: Sendable {
 }
 
 public protocol IncomingFileWriter: AnyObject {
-    /// Reads back the already-received prefix (for resume hashing).
+    /// Streams the bytes written so far (from offset 0), used to verify what is on disk.
     func readPrefix(_ body: (Data) throws -> Void) throws
     func write(_ data: Data) throws
     /// Flushes to stable storage and moves the file to its final, unique name.

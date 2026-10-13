@@ -121,7 +121,9 @@ public struct RecordCipher {
         precondition(counter < UInt64.max)
         let box = try AES.GCM.seal(plaintext, using: key, nonce: nonce())
         counter += 1
-        var out = box.ciphertext
+        // `box.ciphertext` is a slice (non-zero startIndex); copy into a fresh Data.
+        var out = Data(capacity: plaintext.count + 16)
+        out.append(box.ciphertext)
         out.append(box.tag)
         return out
     }

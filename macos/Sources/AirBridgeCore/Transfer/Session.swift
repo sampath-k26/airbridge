@@ -347,10 +347,8 @@ public final class Session: @unchecked Sendable {
         guard m.offset == state.offsets[m.fileId] else { throw ABError(.resumeInvalid, "file_begin offset mismatch") }
         do {
             let w = try storage.openWriter(transferId: m.transferId, peerId: peer.deviceId, file: file, path: file.path, offset: m.offset)
-            var hasher = SHA256()
-            if m.offset > 0 { try w.readPrefix { hasher.update(data: $0) } }
             lock.lock()
-            streams[m.stream] = IncomingFile(state: state, file: file, writer: w, hasher: hasher, position: m.offset)
+            streams[m.stream] = IncomingFile(state: state, file: file, writer: w, position: m.offset)
             state.streams.insert(m.stream)
             lock.unlock()
         } catch {
@@ -370,7 +368,6 @@ public final class Session: @unchecked Sendable {
         } catch {
             return failTransfer(f.state, (error as? ABError) ?? ABError(.writeFailed, "\(error)"))
         }
-        f.hasher.update(data: bytes)
         f.position += Int64(bytes.count)
         f.state.progress.add(Int64(bytes.count), current: f.file.path)
     }
@@ -387,11 +384,19 @@ public final class Session: @unchecked Sendable {
             throw ABError(.malformed, "file_end without file_begin")
         }
         lock.lock(); streams[stream] = nil; state.streams.remove(stream); lock.unlock()
-        let digest = ABCrypto.hex(Data(f.hasher.finalize()))
         if f.position != f.file.size {
             f.writer.close(keep: false)
             return await reportFile(state, m.fileId, ABError(.sizeMismatch, "Received \(f.position) of \(f.file.size) bytes"))
         }
+        // Integrity: hash what is actually stored (read back from the file), so disk/write
+        // faults and resume-offset bugs are caught — not just network corruption, which
+        // AES-GCM already rules out.
+        var hasher = SHA256()
+        do { try f.writer.readPrefix { hasher.update(data: $0) } } catch {
+            f.writer.close(keep: false)
+            return await reportFile(state, m.fileId, ABError(.writeFailed, "Cannot read back file: \(error)"))
+        }
+        let digest = ABCrypto.hex(Data(hasher.finalize()))
         guard digest == m.sha256.lowercased() else {
             f.writer.close(keep: false)
             return await reportFile(state, m.fileId, ABError(.hashMismatch, "SHA-256 mismatch"))
@@ -577,11 +582,10 @@ final class IncomingFile {
     let state: IncomingState
     let file: OfferFile
     let writer: IncomingFileWriter
-    var hasher: SHA256
     var position: Int64
 
-    init(state: IncomingState, file: OfferFile, writer: IncomingFileWriter, hasher: SHA256, position: Int64) {
-        self.state = state; self.file = file; self.writer = writer; self.hasher = hasher; self.position = position
+    init(state: IncomingState, file: OfferFile, writer: IncomingFileWriter, position: Int64) {
+        self.state = state; self.file = file; self.writer = writer; self.position = position
     }
 }
 

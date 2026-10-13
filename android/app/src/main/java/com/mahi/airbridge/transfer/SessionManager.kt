@@ -249,7 +249,10 @@ class SessionManager(
             val err = s.closedSignal.await()
             if (session !== s) return@launch
             session = null
-            val pending = synchronized(jobs) { jobs.values.any { it.peerId == hs.peer.deviceId } }
+            // Reconnect if we owe the peer data (queued sends) or it was sending to us
+            // (interrupted receive): the dialer is the only side that can re-establish.
+            val pending = synchronized(jobs) { jobs.values.any { it.peerId == hs.peer.deviceId } } ||
+                _transfers.value.any { it.status == TransferStatus.INTERRUPTED }
             if (err != null && dialer && pending) {
                 startReconnectLoop(hs.peer)
             } else {

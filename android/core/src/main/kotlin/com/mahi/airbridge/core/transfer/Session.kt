@@ -286,9 +286,7 @@ class Session(
         if (offset != state.offsets[fileId]) throw AbException(ErrorCode.RESUME_INVALID, "file_begin offset mismatch")
         try {
             val w = storage.openWriter(state.transferId, peer.deviceId, file, offset)
-            val md = MessageDigest.getInstance("SHA-256")
-            if (offset > 0) w.readPrefix { b, o, l -> md.update(b, o, l) }
-            streams[stream] = IncomingFile(state, file, w, md, offset)
+            streams[stream] = IncomingFile(state, file, w, offset)
             state.streams.add(stream)
         } catch (e: Exception) {
             failTransfer(state, e as? AbException ?: AbException(ErrorCode.WRITE_FAILED, e.toString(), e))
@@ -309,7 +307,6 @@ class Session(
             failTransfer(f.state, e as? AbException ?: AbException(ErrorCode.WRITE_FAILED, e.toString(), e))
             return
         }
-        f.digest.update(rec.buf, rec.off, rec.len)
         f.position += rec.len
         f.state.progress.add(rec.len.toLong(), f.file.path)
     }
@@ -324,7 +321,17 @@ class Session(
         }
         streams.remove(entry.key); state.streams.remove(entry.key)
         val f = entry.value
-        val digest = AbCrypto.hex(f.digest.digest())
+        // Integrity: hash what is actually stored (read back), so storage faults and
+        // resume-offset bugs are caught — network corruption is already ruled out by AES-GCM.
+        val digest = if (f.position != f.file.size) "" else try {
+            val md = MessageDigest.getInstance("SHA-256")
+            f.writer.readPrefix { b, o, l -> md.update(b, o, l) }
+            AbCrypto.hex(md.digest())
+        } catch (e: Exception) {
+            f.writer.close(keep = false)
+            reportFile(state, fileId, AbException(ErrorCode.WRITE_FAILED, "Cannot read back file: $e", e))
+            return
+        }
         when {
             f.position != f.file.size -> {
                 f.writer.close(keep = false)
@@ -471,7 +478,6 @@ private class IncomingFile(
     val state: IncomingState,
     val file: OfferFile,
     val writer: IncomingFileWriter,
-    val digest: MessageDigest,
     var position: Long,
 )
 
