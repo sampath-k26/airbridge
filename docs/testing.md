@@ -39,8 +39,8 @@ Device tests drive the real app through the **debug-only** `DebugControlService`
 
 | Suite | Kind | Result |
 |---|---|---|
-| Swift `AirBridgeCoreTests` | unit + loopback | **27 / 27 passed** |
-| Kotlin `:core:test` | unit + loopback (JVM) | **23 / 23 passed** |
+| Swift `AirBridgeCoreTests` | unit + loopback | **27 / 27 passed** (interruption tests stress-run 10×) |
+| Kotlin `:core:test` | unit + loopback (JVM) | **23 / 23 passed** (`TransferTest` stress-run 5×) |
 | Android instrumented (`DeviceTest`) | on the phone | **4 / 4 passed** |
 | `interop-test.sh` (Swift ⇄ Kotlin, both roles, QR + manual pairing, bidirectional) | loopback | **24 / 24 checks passed** |
 
@@ -79,6 +79,7 @@ Device tests drive the real app through the **debug-only** `DebugControlService`
 | Mac sender killed mid-transfer → restart | hotspot | ✅ phone auto-reconnected; resent 58.7 MB of 104.9 MB; hash match |
 | Mac receiver killed mid-transfer → restart | hotspot | ✅ phone reconnected and resumed its queued send; resent 54.5 MB; hash match |
 | Release (R8) APK launch | — | ✅ cold start 1.06 s, no crash |
+| Final binaries, 100 MiB each way (after the last fix) | hotspot | ✅ 5.2 MB/s Mac → phone, 6.2 MB/s phone → Mac, both verified |
 
 ## Not tested / limitations
 
