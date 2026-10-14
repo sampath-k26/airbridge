@@ -34,8 +34,10 @@ import java.net.ServerSocket
 import java.nio.file.Files
 import java.security.MessageDigest
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -253,6 +255,22 @@ class TransferTest {
         rs2.close(); ss2.close()
     }
 
+    /** Regression: a write racing with close() must not delete the partial (found by CI). */
+    @Test fun writeFailingDuringCloseKeepsPartial() {
+        val (l, d) = pair(peer("mac"), peer("phone"))
+        val recv = File(tmp, "recv")
+        val ev = CopyOnWriteArrayList<SessionEvent>()
+        val storage = CloseRaceStorage(FileSystemStorage(recv))
+        val rs = session(l, recv, storage, events = ev)
+        val ss = session(d, tmp)
+        val job = pool.submit<TransferResult> { runBlocking { ss.send(listOf(FileSource(file("big.bin", 16 shl 20))), "race-1") } }
+        assertTrue(storage.armed.await(10, TimeUnit.SECONDS))
+        rs.close()
+        assertEquals(ErrorCode.CONNECTION_LOST, job.get(10, TimeUnit.SECONDS).error?.code)
+        assertTrue(File(recv, ".airbridge-partial/race-1/0.part").length() > 0, "partial kept for resume")
+        ss.close()
+    }
+
     @Test fun corruptionOnDiskDetected() {
         val (l, d) = pair(peer("mac"), peer("phone"))
         val recv = File(tmp, "recv")
@@ -326,6 +344,32 @@ private open class WrappedStorage(val inner: ReceiveStorage) : ReceiveStorage by
     open fun wrap(w: IncomingFileWriter): IncomingFileWriter = w
     override fun openWriter(transferId: String, peerId: String, file: OfferFile, offset: Long) =
         wrap(inner.openWriter(transferId, peerId, file, offset))
+}
+
+/**
+ * Holds one write until the session closes the file, then lets it fail while shutdown()
+ * is still running: the exact interleaving that deleted partials.
+ */
+private class CloseRaceStorage(inner: ReceiveStorage) : WrappedStorage(inner) {
+    val armed = CountDownLatch(1)
+    private val fileClosed = CountDownLatch(1)
+    private val writeFailed = CountDownLatch(1)
+    override fun wrap(w: IncomingFileWriter) = object : IncomingFileWriter by w {
+        var bytes = 0L
+        override fun write(buf: ByteArray, off: Int, len: Int) {
+            bytes += len
+            if (bytes < (4 shl 20) || armed.count == 0L) return w.write(buf, off, len)
+            armed.countDown()
+            fileClosed.await(10, TimeUnit.SECONDS)
+            try { w.write(buf, off, len) } finally { writeFailed.countDown() }
+        }
+        override fun close(keep: Boolean) {
+            w.close(keep)
+            fileClosed.countDown()
+            // Keep shutdown() from finishing until the failed write has been handled.
+            if (writeFailed.await(10, TimeUnit.SECONDS)) Thread.sleep(300)
+        }
+    }
 }
 
 private class SlowStorage(inner: ReceiveStorage) : WrappedStorage(inner) {

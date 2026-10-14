@@ -5,7 +5,9 @@ import XCTest
 /// Shared vectors in protocol/test-vectors — the Kotlin suite checks the same files.
 final class VectorTests: XCTestCase {
     func vector(_ name: String) throws -> [String: Any] {
-        let url = Bundle.module.url(forResource: "Vectors/\(name)", withExtension: "json")!
+        // Read from the repository (not a bundled copy) so both suites always use the same files.
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("../../../protocol/test-vectors/\(name).json").standardizedFileURL
         return try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as! [String: Any]
     }
 

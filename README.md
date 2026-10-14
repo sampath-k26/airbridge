@@ -20,7 +20,7 @@ Built for and tested on a **Moto G54 5G (Android 15)** and a **MacBook Air M4
 
 * ✅ Both apps build; protocol implemented identically in Swift and Kotlin
   (24/24 interop checks, shared crypto test vectors).
-* ✅ Automated tests: Swift 29/29, Kotlin 23/23, on-phone instrumented 4/4.
+* ✅ Automated tests: Swift 29/29, Kotlin 24/24, on-phone instrumented 4/4.
 * ✅ Real-device transfers in both directions over the phone's hotspot, up to 1 GB,
   all SHA-256 verified; interrupted transfers resume in both directions.
 * ✅ Speed with the hotspot set to **5 GHz**: **31–43 MB/s** (100 MB in under 3 s,
@@ -130,7 +130,7 @@ Mac connects) is under phone **Receive** / Mac **Connect to Device…**.
 
 ```bash
 cd macos && swift test                       # 29 tests
-cd android && ./gradlew :core:test           # 23 tests
+cd android && ./gradlew :core:test           # 24 tests
 scripts/interop-test.sh                      # Swift ⇄ Kotlin, 24 checks
 ```
 

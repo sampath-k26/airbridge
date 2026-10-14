@@ -381,6 +381,9 @@ class Session(
 
     /** Storage-level failure (disk full, permission): abort the whole transfer. */
     private fun failTransfer(state: IncomingState, e: AbException) {
+        // A write that fails because shutdown() just closed the file is a lost connection,
+        // not a storage error: keep the partial so the transfer can resume.
+        if (isClosed) return
         if (!incoming.remove(state.transferId, state)) return
         dropStreams(state, keep = false)
         storage.discard(state.transferId)

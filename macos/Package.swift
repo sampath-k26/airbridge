@@ -18,8 +18,7 @@ let package = Package(
         .executableTarget(name: "airbridge-cli", dependencies: ["AirBridgeCore"]),
         .testTarget(
             name: "AirBridgeCoreTests",
-            dependencies: ["AirBridgeCore"],
-            resources: [.copy("Vectors")]
+            dependencies: ["AirBridgeCore"]
         ),
     ],
     swiftLanguageModes: [.v5]

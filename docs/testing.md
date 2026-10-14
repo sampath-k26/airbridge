@@ -10,7 +10,7 @@ used by AirBridge. **Simulated** = loopback/JVM runs on the Mac.
 # Swift unit + loopback integration tests (29)
 cd macos && swift test
 
-# Kotlin core unit + loopback integration tests (23), JVM
+# Kotlin core unit + loopback integration tests (24), JVM
 cd android && ./gradlew :core:test
 
 # Android instrumented tests on a connected phone (4) — keep the app installed afterwards:
@@ -40,7 +40,7 @@ Device tests drive the real app through the **debug-only** `DebugControlService`
 | Suite | Kind | Result |
 |---|---|---|
 | Swift `AirBridgeCoreTests` | unit + loopback | **29 / 29 passed** (interruption tests stress-run 10×) |
-| Kotlin `:core:test` | unit + loopback (JVM) | **23 / 23 passed** (`TransferTest` stress-run 5×) |
+| Kotlin `:core:test` | unit + loopback (JVM) | **24 / 24 passed** (`TransferTest` stress-run 5×; the full suite also runs in CI on every pull request) |
 | Android instrumented (`DeviceTest`) | on the phone | **4 / 4 passed** |
 | `interop-test.sh` (Swift ⇄ Kotlin, both roles, QR + manual pairing, bidirectional) | loopback | **24 / 24 checks passed** |
 
@@ -97,6 +97,15 @@ Device tests drive the real app through the **debug-only** `DebugControlService`
 | Phone UI: several paired devices with the same name were indistinguishable | **fixed**: rows now show a key prefix and pairing date |
 | Mac app blocked at launch by a Keychain prompt after a rebuild | documented (troubleshooting) |
 | Time from QR scan to the Mac's approval dialog | ⚠️ about 70 s; cause not established (likely the one-time macOS Local Network prompt) |
+
+### Bug found by CI (2026-10-14)
+
+The first GitHub Actions run failed `resumeAfterConnectionLoss` on the slower Linux runner.
+Cause (Kotlin engine only): when a session closed while a data record was being written,
+the failed write was treated as a storage error and **deleted the resume partial**. Fixed
+in `Session.failTransfer`, with a deterministic regression test
+(`writeFailingDuringCloseKeepsPartial`, which fails without the fix). The Swift engine was
+not affected, because it clears incoming transfers before closing files.
 
 ### Release artifacts (v1.0.0)
 
