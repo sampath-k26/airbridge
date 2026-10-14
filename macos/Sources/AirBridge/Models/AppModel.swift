@@ -27,6 +27,12 @@ struct TransferItem: Identifiable, Codable, Equatable {
     var isActive: Bool { status == .waiting || status == .running || status == .interrupted }
 }
 
+struct Notice: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+}
+
 struct PendingDecision<T>: Identifiable {
     let id = UUID()
     let value: T
@@ -54,6 +60,8 @@ final class AppModel: ObservableObject {
     @Published var pairingCode: PairingCode?
     @Published var pairingPrompt: PendingDecision<PairingRequest>?
     @Published var offerPrompt: PendingDecision<IncomingOffer>?
+    /// A one-off message for the user (shown as an alert).
+    @Published var notice: Notice?
 
     // Settings (UserDefaults).
     @Published var deviceName: String { didSet { defaults.set(deviceName, forKey: "deviceName") } }
@@ -363,8 +371,20 @@ final class AppModel: ObservableObject {
     func send(_ urls: [URL]) {
         guard let peer = connectedPeer else { return }
         let files: [OutgoingFile]
-        do { files = try OutgoingFile.collect(urls) } catch {
-            connection = .failed("Could not read the selected files: \(error.localizedDescription)"); return
+        do { files = try OutgoingFile.collect(urls) } catch let e as CloudFilesNotDownloaded {
+            // Ask macOS to fetch them now; reading them during the transfer would hang
+            // without internet (e.g. on a phone hotspot without mobile data).
+            for u in e.files { try? FileManager.default.startDownloadingUbiquitousItem(at: u) }
+            let names = e.files.prefix(3).map { "“\($0.lastPathComponent)”" }.joined(separator: ", ")
+                + (e.files.count > 3 ? " and \(e.files.count - 3) more" : "")
+            notice = Notice(title: "Not downloaded from iCloud yet",
+                            message: "\(names) \(e.files.count == 1 ? "is" : "are") stored in iCloud and not on this Mac. "
+                                + "AirBridge asked macOS to download \(e.files.count == 1 ? "it" : "them"). This needs internet, so if the Mac "
+                                + "is on a hotspot without mobile data, download in Finder (Download Now) on your normal Wi-Fi first. "
+                                + "Then send again.")
+            return
+        } catch {
+            notice = Notice(title: "Could not read the selected files", message: error.localizedDescription); return
         }
         guard !files.isEmpty else { return }
         let id = UUID().uuidString.lowercased()

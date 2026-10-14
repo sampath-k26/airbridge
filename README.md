@@ -20,7 +20,7 @@ Built for and tested on a **Moto G54 5G (Android 15)** and a **MacBook Air M4
 
 * ✅ Both apps build; protocol implemented identically in Swift and Kotlin
   (24/24 interop checks, shared crypto test vectors).
-* ✅ Automated tests: Swift 27/27, Kotlin 23/23, on-phone instrumented 4/4.
+* ✅ Automated tests: Swift 29/29, Kotlin 23/23, on-phone instrumented 4/4.
 * ✅ Real-device transfers in both directions over the phone's hotspot, up to 1 GB,
   all SHA-256 verified; interrupted transfers resume in both directions.
 * ✅ Speed with the hotspot set to **5 GHz**: **31–43 MB/s** (100 MB in under 3 s,
@@ -28,8 +28,9 @@ Built for and tested on a **Moto G54 5G (Android 15)** and a **MacBook Air M4
   choose *Hotspot → Speed & compatibility → 5 GHz*. Large Mac → phone transfers
   sometimes dip to 12–16 MB/s because of Wi-Fi link variance (raw TCP shows the same
   dips).
-* ⚠️ The user interfaces have not been visually checked on the devices yet (tests ran
-  with both screens locked). The macOS app is ad-hoc signed and not notarized.
+* ✅ First manual UI pass with the user: QR pairing and phone → Mac transfer worked. Bugs
+  found there are fixed: iCloud placeholder files hung a send, and a phone button label
+  wrapped. See `docs/testing.md`. The macOS app is ad-hoc signed and not notarized.
 
 Details: [`docs/testing.md`](docs/testing.md), [`docs/performance.md`](docs/performance.md).
 
@@ -116,7 +117,7 @@ Mac connects) is under phone **Receive** / Mac **Connect to Device…**.
 ## Testing
 
 ```bash
-cd macos && swift test                       # 27 tests
+cd macos && swift test                       # 29 tests
 cd android && ./gradlew :core:test           # 23 tests
 scripts/interop-test.sh                      # Swift ⇄ Kotlin, 24 checks
 ```

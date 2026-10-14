@@ -48,6 +48,8 @@ struct ContentView: View {
                   secondaryButton: .cancel(Text("Decline")) { p.answer(false) })
         }
         .sheet(item: $model.offerPrompt) { o in OfferSheet(prompt: o) }
+        .alert(model.notice?.title ?? "", isPresented: Binding(get: { model.notice != nil }, set: { if !$0 { model.notice = nil } }),
+               presenting: model.notice) { _ in Button("OK") {} } message: { n in Text(n.message) }
     }
 }
 

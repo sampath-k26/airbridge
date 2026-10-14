@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import com.mahi.airbridge.core.crypto.PeerRecord
 import com.mahi.airbridge.transfer.SessionManager.Connection
 import com.mahi.airbridge.transfer.TransferUi
+import com.mahi.airbridge.util.Format
 
 @Composable
 fun HomeScreen(
@@ -173,11 +174,15 @@ private fun ConnectionPanel(c: Connection, onConnect: () -> Unit, onReceive: () 
                     }
                 }
                 Connection.Idle -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
-                    OutlinedButton(onClick = onConnect, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Outlined.QrCodeScanner, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Connect to Mac")
+                    // The longer label gets more room so neither wraps on a ~360 dp screen.
+                    val pad = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
+                    OutlinedButton(onClick = onConnect, modifier = Modifier.weight(1.4f), contentPadding = pad) {
+                        Icon(Icons.Outlined.QrCodeScanner, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp))
+                        Text("Connect to Mac", maxLines = 1, softWrap = false)
                     }
-                    OutlinedButton(onClick = onReceive, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Outlined.Download, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Receive")
+                    OutlinedButton(onClick = onReceive, modifier = Modifier.weight(1f), contentPadding = pad) {
+                        Icon(Icons.Outlined.Download, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp))
+                        Text("Receive", maxLines = 1, softWrap = false)
                     }
                 }
                 else -> {}
@@ -197,6 +202,9 @@ private fun PeerRow(p: PeerRecord, isConnected: Boolean, onClick: () -> Unit, on
             Text(p.name, style = MaterialTheme.typography.bodyLarge)
             Text(if (isConnected) "Connected" else "Tap to connect · ${p.lastHosts.firstOrNull() ?: "address unknown"}",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // Two devices can share a name (e.g. a reinstalled Mac app); the key tells them apart.
+            Text("Key ${p.displayFingerprint.substringBefore(' ')} · paired ${Format.date(p.pairedAt)}",
+                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, "Options for ${p.name}") }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {

@@ -7,7 +7,7 @@ used by AirBridge. **Simulated** = loopback/JVM runs on the Mac.
 ## How to run
 
 ```bash
-# Swift unit + loopback integration tests (27)
+# Swift unit + loopback integration tests (29)
 cd macos && swift test
 
 # Kotlin core unit + loopback integration tests (23), JVM
@@ -39,7 +39,7 @@ Device tests drive the real app through the **debug-only** `DebugControlService`
 
 | Suite | Kind | Result |
 |---|---|---|
-| Swift `AirBridgeCoreTests` | unit + loopback | **27 / 27 passed** (interruption tests stress-run 10×) |
+| Swift `AirBridgeCoreTests` | unit + loopback | **29 / 29 passed** (interruption tests stress-run 10×) |
 | Kotlin `:core:test` | unit + loopback (JVM) | **23 / 23 passed** (`TransferTest` stress-run 5×) |
 | Android instrumented (`DeviceTest`) | on the phone | **4 / 4 passed** |
 | `interop-test.sh` (Swift ⇄ Kotlin, both roles, QR + manual pairing, bidirectional) | loopback | **24 / 24 checks passed** |
@@ -84,12 +84,28 @@ Device tests drive the real app through the **debug-only** `DebugControlService`
 | 1 GiB each way | hotspot 5 GHz | ✅ phone → Mac 36.9 MB/s; Mac → phone 15.9 / 12.1 / 31.5 MB/s in three runs (link variance, see performance.md §1a); all verified |
 | Raw TCP baseline (no AirBridge), 1 GiB Mac → phone | hotspot 5 GHz | 34.6–37.3 MB/s on average, dipping to ~15 MB/s at times |
 
+### Manual UI test with the user (2026-10-14)
+
+| Step | Result |
+|---|---|
+| Mac app home, pairing sheet with QR code, approval dialog | ✅ rendered correctly; the address in the QR updated to the hotspot IP |
+| Phone home, *Connect to Mac*, camera QR scan | ✅ scanned on first try |
+| Pairing approval on both sides, same 6-digit number shown | ✅ (583263 on both) |
+| Phone → Mac, a 1.1 MB photo chosen in the system picker | ✅ arrived in `~/Downloads/AirBridge`, *verified (SHA-256)*, 5.1 MB/s |
+| Mac → phone, a 14.7 MB PDF chosen with *Choose Files…* | ❌ stuck at 0 %. The PDF was an iCloud placeholder (`dataless`) and the hotspot had no internet → **fixed**: such files are now detected before sending (`CloudFileTests`) |
+| Phone UI bug: *Connect to Mac* button label wrapped onto two lines | **fixed** |
+| Phone UI: several paired devices with the same name were indistinguishable | **fixed**: rows now show a key prefix and pairing date |
+| Mac app blocked at launch by a Keychain prompt after a rebuild | documented (troubleshooting) |
+| Time from QR scan to the Mac's approval dialog | ⚠️ about 70 s; cause not established (likely the one-time macOS Local Network prompt) |
+
 ## Not tested / limitations
 
-* **UI was not visually verified on either device.** The development session ran while
-  the phone and Mac were locked; both UIs compile and the release app starts without
-  crashing, but screens, dialogs, QR scanning with the camera and drag-and-drop need a
-  manual pass.
+* **UI partly verified** (above). Drag-and-drop onto the Mac window, Settings screens on
+  both sides, the Share sheet and transfers of folders through the UI were not exercised
+  manually.
+* Android: files picked from a cloud provider (e.g. Google Drive) are downloaded by that
+  provider when read; without internet such a send may stall like the iCloud case. Not
+  handled yet.
 * The in-app Local-Only Hotspot was not measured (see `networking-feasibility.md`).
 * Wi-Fi switched off on the phone mid-transfer (tested instead by killing the Mac
   process, which produces the same connection loss on the phone).

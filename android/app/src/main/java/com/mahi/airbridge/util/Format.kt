@@ -20,4 +20,8 @@ object Format {
         seconds < 3600 -> "${seconds / 60}m ${seconds % 60}s left"
         else -> "${seconds / 3600}h ${(seconds % 3600) / 60}m left"
     }
+
+    /** Short local date, e.g. "14 Oct". */
+    fun date(epochMillis: Long): String =
+        java.text.SimpleDateFormat("d MMM", Locale.getDefault()).format(java.util.Date(epochMillis))
 }

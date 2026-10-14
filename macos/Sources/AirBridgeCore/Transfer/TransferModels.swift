@@ -17,7 +17,22 @@ public struct OutgoingFile: Sendable, Equatable {
 
     /// Expands files and folders into a flat list. Folders keep their name as the
     /// top-level path component. Symlinks and package internals are not followed.
+    /// Throws `CloudFilesNotDownloaded` when any file is a cloud placeholder: reading one
+    /// blocks until macOS fetches it, which never finishes on a network without internet.
     public static func collect(_ urls: [URL]) throws -> [OutgoingFile] {
+        let files = try collectAll(urls)
+        let missing = files.filter { isDataless($0.url) }
+        if !missing.isEmpty { throw CloudFilesNotDownloaded(files: missing.map(\.url)) }
+        return files
+    }
+
+    /// True for iCloud Drive / File Provider files whose contents are not on this Mac.
+    public static func isDataless(_ url: URL) -> Bool {
+        var st = stat()
+        return lstat(url.path, &st) == 0 && (st.st_flags & UInt32(SF_DATALESS)) != 0
+    }
+
+    private static func collectAll(_ urls: [URL]) throws -> [OutgoingFile] {
         var out: [OutgoingFile] = []
         let keys: [URLResourceKey] = [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey]
         func make(_ u: URL, _ path: String) throws -> OutgoingFile? {
@@ -48,6 +63,12 @@ public struct OutgoingFile: Sendable, Equatable {
         }
         return out
     }
+}
+
+/// Some selected files live in the cloud (e.g. iCloud Drive with "Optimise Mac Storage")
+/// and must be downloaded before they can be sent.
+public struct CloudFilesNotDownloaded: Error, Sendable {
+    public let files: [URL]
 }
 
 /// An offer from the peer, already validated and sanitised.

@@ -16,6 +16,23 @@
 6. The address changed (new hotspot session): tap the paired Mac to reconnect — AirBridge
    tries the last address and Bonjour discovery — or scan a new QR code.
 
+### The Mac app's window does not appear / it does not listen
+
+At launch AirBridge reads its device key from the login Keychain. macOS may show a
+Keychain prompt first ("AirBridge wants to use your confidential information…"). Enter
+your login password and click **Always Allow**. The window appears only after you answer.
+Because the app is ad-hoc signed, every rebuild looks like a new app to the Keychain and
+asks again.
+
+### A transfer from the Mac stays at 0 %
+
+If the file is in **iCloud Drive** (including Desktop & Documents with *Optimise Mac
+Storage*) and not downloaded, its contents are not on the Mac. Reading it makes macOS
+download it first, which never finishes on a hotspot without internet. AirBridge now
+detects such files before sending. It shows *Not downloaded from iCloud yet* and asks macOS
+to download them. Fix: in Finder, right-click → **Download Now** while on normal Wi-Fi,
+then send again. (Found during the first manual UI test, 2026-10-14.)
+
 ### Pairing errors
 
 | Message | Meaning / fix |
