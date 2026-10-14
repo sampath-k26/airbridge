@@ -19,6 +19,40 @@ compared byte-for-byte or by SHA-256 with its source; all runs listed passed.
 
 ## 1. Real devices over the phone hotspot (the number that matters)
 
+### 1a. 5 GHz hotspot (recommended setting)
+
+Link: Moto G54 hotspot set to **5 GHz → channel 36, 802.11ac, 80 MHz, MCS 9, 433 Mbps
+PHY**, Mac at −45 dBm (same room).
+
+| Size | Direction | Result | Verified |
+|---|---|---|---|
+| 100 MiB | Mac → phone | **38.5 MB/s** (2.7 s) | ✅ |
+| 100 MiB | Phone → Mac | **43.0 MB/s** (2.4 s) | ✅ |
+| 1 GiB | Phone → Mac | **36.9 MB/s** (29.1 s) | ✅ |
+| 1 GiB | Mac → phone | 15.9 / 12.1 / 31.5 MB/s (three runs) | ✅ all |
+
+That is **≈ 6–7× the 2.4 GHz numbers** below.
+
+**Why large Mac → phone transfers vary.** The spread happens on the link, not in AirBridge:
+
+* Raw TCP without AirBridge (`nc` on the phone, 1 GiB) reached 34.6–37.3 MB/s on
+  average. Its 5-second throughput dipped from ~45 to ~15 MB/s several times, and it
+  was the same whether the data went to `/dev/null`, shared storage (`/sdcard/Download`)
+  or `/data`. So neither phone storage nor the protocol sets the ceiling.
+* In a slow AirBridge run (~8 MB/s, measured while also polling the phone over adb
+  every 2 s), the app's threads used about 3 % CPU. It was waiting for data, not
+  processing it.
+* In a fast run (31.5 MB/s), the phone's TCP receive queue stayed near 0, so the app
+  read as fast as data arrived. The Mac's send queue stayed full (~2.6 MB), so the
+  Mac produced data as fast as the link took it.
+* The app ran in the `foreground` cpuset during the transfers, so it was not
+  CPU-throttled. Phone battery temperature was 35 °C.
+
+Likely causes are 5 GHz rate adaptation and interference, which nothing on either device
+controls. Expect 30–40 MB/s typically, with occasional slower runs.
+
+### 1b. 2.4 GHz hotspot (the phone's default)
+
 Link: Moto G54 hotspot, **2.4 GHz, 802.11n, 20 MHz, MCS 7 → 72 Mbps PHY**
 (as configured on the phone; reported by the Mac's Wi-Fi status).
 
@@ -36,9 +70,8 @@ at 2–10 % and charging during the tests).
 
 **Interpretation.** 72 Mbps PHY gives at most ≈ 7–7.5 MB/s of TCP payload after Wi-Fi and
 TCP overheads; AirBridge reaches 65–90 % of that. Chunk size makes **no measurable
-difference** on this link — the radio is the bottleneck by more than 10× (see §3). The
-single biggest improvement available is the **5 GHz hotspot band** the phone supports
-(802.11ac, up to 433 Mbps PHY) — *not measured yet*.
+difference** on this link — the radio is the bottleneck by more than 10× (see §3). Switching
+the hotspot to **5 GHz** removes that bottleneck (§1a).
 
 ### Resume on the real devices
 

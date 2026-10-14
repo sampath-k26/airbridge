@@ -28,7 +28,7 @@
 ### Slow transfers
 
 * The hotspot band is the main factor. On the Moto G54: **Hotspot → Speed &
-  compatibility → 5 GHz** (2.4 GHz caps at ≈ 6 MB/s; measured).
+  compatibility → 5 GHz** (measured: 2.4 GHz caps at ≈ 6 MB/s, 5 GHz reaches 31–43 MB/s).
 * Keep the devices within a few metres; walls and 2.4 GHz congestion lower the rate.
 * Check the Mac's link: hold ⌥ and click the Wi-Fi menu → *Tx Rate*.
 * Chunk size (Settings) has no measurable effect on Wi-Fi; keep 1 MiB.

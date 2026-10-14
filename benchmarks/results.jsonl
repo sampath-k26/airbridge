@@ -40,3 +40,7 @@
 {"date":"2026-10-13T22:14:29Z","kind":"device","link":"phone hotspot 2.4GHz 802.11n 20MHz (72 Mbps PHY)","direction":"mac->phone","chunk":1048576,"run":1,"bytes":1073741824,"seconds":211.631,"MBps":5.0999999999999996,"verified":true}
 {"date":"2026-10-13T22:14:29Z","kind":"device","link":"phone hotspot 2.4GHz 802.11n 20MHz (72 Mbps PHY)","direction":"phone->mac","chunk":1048576,"run":1,"bytes":1073741824,"seconds":232.04900000000001,"MBps":4.5999999999999996,"verified":true}
 {"date":"2026-10-14T03:51:00Z","kind":"device-memory","device":"moto g54 5G Android 15","note":"max TOTAL PSS of the debug app sampled every 3 s during 1 GB transfers both ways; idle baseline before test 159.7 MB","maxPssMB":160}
+{"date":"2026-10-14T07:21:50Z","kind":"device","link":"phone hotspot 5 GHz","direction":"mac->phone","chunk":1048576,"run":1,"bytes":104857600,"seconds":2.7229999999999999,"MBps":38.5,"verified":true}
+{"date":"2026-10-14T07:21:50Z","kind":"device","link":"phone hotspot 5 GHz","direction":"phone->mac","chunk":1048576,"run":1,"bytes":104857600,"seconds":2.4380000000000002,"MBps":43,"verified":true}
+{"date":"2026-10-14T07:22:45Z","kind":"device","link":"phone hotspot 5 GHz","direction":"mac->phone","chunk":1048576,"run":1,"bytes":1073741824,"seconds":67.451999999999998,"MBps":15.9,"verified":true}
+{"date":"2026-10-14T07:22:45Z","kind":"device","link":"phone hotspot 5 GHz","direction":"phone->mac","chunk":1048576,"run":1,"bytes":1073741824,"seconds":29.120999999999999,"MBps":36.899999999999999,"verified":true}

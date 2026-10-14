@@ -80,6 +80,9 @@ Device tests drive the real app through the **debug-only** `DebugControlService`
 | Mac receiver killed mid-transfer → restart | hotspot | ✅ phone reconnected and resumed its queued send; resent 54.5 MB; hash match |
 | Release (R8) APK launch | — | ✅ cold start 1.06 s, no crash |
 | Final binaries, 100 MiB each way (after the last fix) | hotspot | ✅ 5.2 MB/s Mac → phone, 6.2 MB/s phone → Mac, both verified |
+| 100 MiB each way | hotspot **5 GHz** (802.11ac, 433 Mbps) | ✅ 38.5 MB/s Mac → phone, 43.0 MB/s phone → Mac, verified |
+| 1 GiB each way | hotspot 5 GHz | ✅ phone → Mac 36.9 MB/s; Mac → phone 15.9 / 12.1 / 31.5 MB/s in three runs (link variance, see performance.md §1a); all verified |
+| Raw TCP baseline (no AirBridge), 1 GiB Mac → phone | hotspot 5 GHz | 34.6–37.3 MB/s on average, dipping to ~15 MB/s at times |
 
 ## Not tested / limitations
 
@@ -87,8 +90,7 @@ Device tests drive the real app through the **debug-only** `DebugControlService`
   the phone and Mac were locked; both UIs compile and the release app starts without
   crashing, but screens, dialogs, QR scanning with the camera and drag-and-drop need a
   manual pass.
-* 5 GHz hotspot and the in-app Local-Only Hotspot were not measured (see
-  `networking-feasibility.md`).
+* The in-app Local-Only Hotspot was not measured (see `networking-feasibility.md`).
 * Wi-Fi switched off on the phone mid-transfer (tested instead by killing the Mac
   process, which produces the same connection loss on the phone).
 * Android activity recreation / app backgrounding during a transfer were not exercised

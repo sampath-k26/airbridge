@@ -23,9 +23,11 @@ Built for and tested on a **Moto G54 5G (Android 15)** and a **MacBook Air M4
 * ✅ Automated tests: Swift 27/27, Kotlin 23/23, on-phone instrumented 4/4.
 * ✅ Real-device transfers in both directions over the phone's hotspot, up to 1 GB,
   all SHA-256 verified; interrupted transfers resume in both directions.
-* ⚠️ Measured speed is **5–6.5 MB/s** because the phone's hotspot is set to **2.4 GHz**
-  (72 Mbps link). The phone supports a **5 GHz** hotspot, which should be several times
-  faster — switch it in *Hotspot → Speed & compatibility* (not yet measured).
+* ✅ Speed with the hotspot set to **5 GHz**: **31–43 MB/s** (100 MB in under 3 s,
+  1 GB phone → Mac in 29 s). On the default **2.4 GHz** band it is only 5–6.5 MB/s, so
+  choose *Hotspot → Speed & compatibility → 5 GHz*. Large Mac → phone transfers
+  sometimes dip to 12–16 MB/s because of Wi-Fi link variance (raw TCP shows the same
+  dips).
 * ⚠️ The user interfaces have not been visually checked on the devices yet (tests ran
   with both screens locked). The macOS app is ad-hoc signed and not notarized.
 

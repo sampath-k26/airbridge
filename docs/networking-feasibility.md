@@ -32,9 +32,10 @@ All results below were measured on 2026-10-14 with the actual devices unless mar
 **Biggest available speed-up:** the hotspot is set to *2.4 GHz / Compatible with most
 devices*. The phone supports a 5 GHz SoftAP (802.11ac). Switching **Settings → Network &
 internet → Hotspot & tethering → Wi-Fi hotspot → Speed & compatibility → 5 GHz** should
-raise the PHY rate from 72 Mbps to 433 Mbps (80 MHz, 1×1) — an expected 3–5× faster
-transfer. *Not yet measured:* changing a user's hotspot settings was deliberately left to
-the user. The phone's CPU/storage are not a limit: an encrypted on-device loopback
+raise the PHY rate from 72 Mbps to 433 Mbps (80 MHz, 1×1). **Measured after the user
+switched it:** channel 36, 802.11ac, MCS 9, 433 Mbps. 100 MB ran at 38.5 MB/s Mac → phone
+and 43 MB/s phone → Mac, and 1 GB phone → Mac at 36.9 MB/s. That is about 6–7× faster
+than 2.4 GHz. The phone's CPU/storage are not a limit: an encrypted on-device loopback
 session sustained **78.6 MB/s** (see `docs/performance.md`).
 
 ## Strategy B — Android Local-Only Hotspot (`WifiManager.startLocalOnlyHotspot`) ⚠️ implemented, not yet measured
