@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
                 m.send(pendingShares.toList()); pendingShares.clear()
             }
         }
-        LaunchedEffect(connection) { if (connection is Connection.Connected && screen == "connect") screen = "home" }
+        LaunchedEffect(connection) { if (connection is Connection.Connected && (screen == "connect" || screen == "receive")) screen = "home" }
 
         val pickFiles = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             if (uris.isNotEmpty()) m.send(uris)

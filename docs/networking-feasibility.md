@@ -71,7 +71,7 @@ session sustained **78.6 MB/s** (see `docs/performance.md`).
 
 ## Strategy E — existing local network (router) ⚠️ fallback, **failed at the test site**
 
-* Both devices were on the home router `FTTH-1DA2` (Mac `192.168.1.5`, phone
+* Both devices were on the home router (Mac `192.168.1.5`, phone
   `192.168.1.6`). **ARP between them failed in both directions** and TCP gave
   `No route to host`; the Mac firewall was off. The router applies **client (AP)
   isolation**, so device-to-device traffic is impossible on this network.

@@ -20,3 +20,5 @@ android/.kotlin/
 # Test artifacts
 benchmarks/tmp/
 test-files/
+# Release artifacts
+dist/

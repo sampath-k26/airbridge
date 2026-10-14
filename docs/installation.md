@@ -11,6 +11,17 @@
 
 No accounts, cloud services or paid tools are needed.
 
+## Prebuilt downloads
+
+Each GitHub release has:
+
+* **`AirBridge-<version>.apk`**: Android app, signed release build. On the phone, open
+  the file and allow *Install unknown apps* for your browser or file manager when asked.
+* **`AirBridge-<version>.dmg`**: macOS app. Open it and drag AirBridge to Applications.
+  The app is not notarized, so the first time right-click it → **Open** → **Open**, or use
+  System Settings → Privacy & Security → **Open Anyway**.
+* **`SHA256SUMS.txt`**: check the downloads with `shasum -a 256 -c SHA256SUMS.txt`.
+
 ## Android app
 
 ### Build
@@ -50,25 +61,34 @@ in Settings).
 
 ### Release build
 
-```bash
-./gradlew :app:assembleRelease          # → app-release-unsigned.apk (R8-minified, ~4 MB)
+The build signs the release APK when it finds a keystore properties file, either
+`~/.airbridge/keystore.properties` or the path in `AIRBRIDGE_KEYSTORE_PROPERTIES`:
+
+```properties
+storeFile=/Users/you/.airbridge/release.jks
+storePassword=…
+keyAlias=airbridge
+keyPassword=…
 ```
 
-Sign it with your own keystore (never commit it):
+Create your own key once and keep it and its password outside the repository, backed up.
+Updates must be signed with the same key:
 
 ```bash
-keytool -genkeypair -v -keystore ~/airbridge-release.jks -alias airbridge -keyalg EC -groupname secp256r1 -validity 10000
-$ANDROID_HOME/build-tools/37.0.0/zipalign -f 4 app/build/outputs/apk/release/app-release-unsigned.apk /tmp/aligned.apk
-$ANDROID_HOME/build-tools/37.0.0/apksigner sign --ks ~/airbridge-release.jks --out AirBridge.apk /tmp/aligned.apk
+keytool -genkeypair -v -keystore ~/.airbridge/release.jks -alias airbridge -keyalg EC -groupname secp256r1 -validity 10000
+./gradlew :app:assembleRelease          # → app/build/outputs/apk/release/app-release.apk (R8-minified, ~4 MB)
 ```
 
-A release APK cannot be installed over a debug install signed with a different key —
-uninstall first (`adb uninstall com.mahi.airbridge`; this deletes pairings).
+Without the properties file the output is `app-release-unsigned.apk`.
+
+A release APK cannot be installed over a debug install signed with a different key.
+Uninstall first (`adb uninstall com.mahi.airbridge`); this deletes pairings.
 
 ## macOS app
 
 ```bash
 scripts/build-macos-app.sh              # → macos/dist/AirBridge.app (release, ad-hoc signed)
+scripts/make-dmg.sh 1.0.0               # → dist/AirBridge-1.0.0.dmg (drag-to-Applications image)
 open macos/dist/AirBridge.app
 ```
 

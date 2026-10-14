@@ -34,6 +34,17 @@ Built for and tested on a **Moto G54 5G (Android 15)** and a **MacBook Air M4
 
 Details: [`docs/testing.md`](docs/testing.md), [`docs/performance.md`](docs/performance.md).
 
+## Download
+
+Get the latest **[release](../../releases/latest)**:
+
+* **Android:** `AirBridge-1.0.0.apk` (Android 10 or newer). Open it on the phone and allow
+  installing from your browser or file manager.
+* **macOS:** `AirBridge-1.0.0.dmg` (macOS 14 or newer, Apple silicon). Drag to
+  Applications. On first launch: right-click → **Open** (the app is not notarized).
+
+Then follow [Pairing](#pairing).
+
 ## How it works
 
 ```
@@ -78,12 +89,13 @@ docs/                Architecture, feasibility, security, testing, performance, 
 ## Build and install
 
 ```bash
-# Android (debug APK)
+# Android (debug APK; for a signed release APK see docs/installation.md)
 cd android && ./gradlew :app:assembleDebug
 ~/Library/Android/sdk/platform-tools/adb install -r app/build/outputs/apk/debug/app-debug.apk
 
-# macOS app
+# macOS app (+ optional disk image)
 scripts/build-macos-app.sh && open macos/dist/AirBridge.app
+scripts/make-dmg.sh 1.0.0
 ```
 
 Full instructions, permissions, signing and Gatekeeper notes:

@@ -69,7 +69,7 @@ Device tests drive the real app through the **debug-only** `DebugControlService`
 
 | Test | Network | Result |
 |---|---|---|
-| Router path (FTTH-1DA2) | home router | ❌ blocked by router client isolation (ARP fails both ways) |
+| Router path (home router) | home router | ❌ blocked by router client isolation (ARP fails both ways) |
 | Hotspot reachability, 60 s link stability | phone hotspot 2.4 GHz | ✅ |
 | 11-file corpus (Unicode, folders, empty files) both directions | USB `adb reverse` tunnel | ✅ all hashes match; duplicates saved as `(1)` |
 | 100 MB Mac → phone / phone → Mac | hotspot | ✅ 5.7 / 6.3 MB/s, SHA-256 match |
@@ -97,6 +97,13 @@ Device tests drive the real app through the **debug-only** `DebugControlService`
 | Phone UI: several paired devices with the same name were indistinguishable | **fixed**: rows now show a key prefix and pairing date |
 | Mac app blocked at launch by a Keychain prompt after a rebuild | documented (troubleshooting) |
 | Time from QR scan to the Mac's approval dialog | ⚠️ about 70 s; cause not established (likely the one-time macOS Local Network prompt) |
+
+### Release artifacts (v1.0.0)
+
+| Artifact | Check | Result |
+|---|---|---|
+| `AirBridge-1.0.0.apk` (signed, R8) | installed on the Moto G54, QR-less pairing with code over USB (`adb forward`), 20 MiB Mac → phone | ✅ paired, SHA-256 match, 31 MB/s; no crashes |
+| `AirBridge-1.0.0.dmg` | `hdiutil verify`, mounted, `codesign --verify --deep` on the app inside | ✅ |
 
 ## Not tested / limitations
 

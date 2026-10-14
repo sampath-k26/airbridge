@@ -1,7 +1,16 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+// Release signing key lives outside the repository. Point AIRBRIDGE_KEYSTORE_PROPERTIES at a
+// properties file (storeFile, storePassword, keyAlias, keyPassword) or use the default path.
+// Without it the release APK is built unsigned.
+val keystoreProps = file(System.getenv("AIRBRIDGE_KEYSTORE_PROPERTIES")
+    ?: "${System.getProperty("user.home")}/.airbridge/keystore.properties")
+    .takeIf { it.isFile }?.let { f -> Properties().apply { f.inputStream().use { load(it) } } }
 
 android {
     namespace = "com.mahi.airbridge"
@@ -19,8 +28,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (keystoreProps != null) create("release") {
+            storeFile = file(keystoreProps.getProperty("storeFile"))
+            storePassword = keystoreProps.getProperty("storePassword")
+            keyAlias = keystoreProps.getProperty("keyAlias")
+            keyPassword = keystoreProps.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
