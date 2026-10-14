@@ -168,6 +168,11 @@ has not been independently audited — see [`docs/security.md`](docs/security.md
   your own key.
 * No Wi-Fi Direct (macOS has no public API for it).
 
+## Contributing and security
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Report security problems
+privately as described in [SECURITY.md](SECURITY.md).
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
