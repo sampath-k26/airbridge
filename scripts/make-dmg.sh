@@ -3,7 +3,7 @@
 # Usage: scripts/make-dmg.sh [VERSION]   → dist/AirBridge-<VERSION>.dmg
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-VERSION=${1:-1.0.0}
+VERSION=${1:-1.1.0}
 APP=$ROOT/macos/dist/AirBridge.app
 [ -d "$APP" ] || { echo "Build the app first: scripts/build-macos-app.sh"; exit 1; }
 OUT=$ROOT/dist/AirBridge-$VERSION.dmg

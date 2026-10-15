@@ -20,6 +20,8 @@ struct TransferItem: Identifiable, Codable, Equatable {
     var eta: TimeInterval?
     var error: String?
     var savedTo: [String] = []
+    /// Local paths of what was sent (top-level items), used for previews and Show in Finder.
+    var sourcePaths: [String]?
     var startedAt = Date()
     var finishedAt: Date?
 
@@ -361,6 +363,11 @@ final class AppModel: ObservableObject {
         try? JSONEncoder().encode(history).write(to: historyURL, options: .atomic)
     }
 
+    func removeFromHistory(_ id: String) {
+        history.removeAll { $0.id == id }
+        try? JSONEncoder().encode(history).write(to: historyURL, options: .atomic)
+    }
+
     func clearHistory() {
         history = []
         try? FileManager.default.removeItem(at: historyURL)
@@ -391,8 +398,10 @@ final class AppModel: ObservableObject {
         jobs[id] = (peer.deviceId, files, nil)
         jobOrder.append(id)
         upsert(id) { _ in
-            TransferItem(id: id, direction: .send, peerName: peer.name, title: Self.title(files.map(\.path)),
-                         fileCount: files.count, totalBytes: files.reduce(0) { $0 + $1.size })
+            var t = TransferItem(id: id, direction: .send, peerName: peer.name, title: Self.title(files.map(\.path)),
+                                 fileCount: files.count, totalBytes: files.reduce(0) { $0 + $1.size })
+            t.sourcePaths = urls.map(\.path)
+            return t
         }
         runJobs()
     }
@@ -431,7 +440,7 @@ final class AppModel: ObservableObject {
     }
 
     func reveal(_ t: TransferItem) {
-        let urls = t.savedTo.map { URL(fileURLWithPath: $0) }.filter { FileManager.default.fileExists(atPath: $0.path) }
+        let urls = (t.direction == .send ? t.sourcePaths ?? [] : t.savedTo).map { URL(fileURLWithPath: $0) }.filter { FileManager.default.fileExists(atPath: $0.path) }
         if urls.isEmpty { NSWorkspace.shared.open(destination) } else { NSWorkspace.shared.activateFileViewerSelecting(urls) }
     }
 }

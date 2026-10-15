@@ -12,7 +12,8 @@ struct AirBridgeApp: App {
                 .environmentObject(model)
                 .onAppear { model.start() }
         }
-        .defaultSize(width: 820, height: 680)
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 1200, height: 800)
         .commands {
             CommandGroup(replacing: .newItem) {}
         }

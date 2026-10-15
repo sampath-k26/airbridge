@@ -88,7 +88,7 @@ Uninstall first (`adb uninstall com.mahi.airbridge`); this deletes pairings.
 
 ```bash
 scripts/build-macos-app.sh              # → macos/dist/AirBridge.app (release, ad-hoc signed)
-scripts/make-dmg.sh 1.0.0               # → dist/AirBridge-1.0.0.dmg (drag-to-Applications image)
+scripts/make-dmg.sh 1.1.0               # → dist/AirBridge-1.1.0.dmg (drag-to-Applications image)
 open macos/dist/AirBridge.app
 ```
 

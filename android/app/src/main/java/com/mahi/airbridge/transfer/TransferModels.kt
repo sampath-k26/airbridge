@@ -53,6 +53,10 @@ class TransferHistory(private val file: File) {
     @Synchronized
     fun add(t: TransferUi) {
         items = (listOf(t) + items.filter { it.id != t.id }).take(100)
+        save()
+    }
+
+    private fun save() {
         runCatching {
             file.writeText(JsonArray(items.map {
                 Json.obj("id" to it.id, "direction" to it.direction.name, "peer" to it.peerName, "title" to it.title,
@@ -61,6 +65,12 @@ class TransferHistory(private val file: File) {
                     "started" to it.startedAt, "finished" to it.finishedAt)
             }).toString())
         }
+    }
+
+    @Synchronized
+    fun remove(id: String) {
+        items = items.filter { it.id != id }
+        save()
     }
 
     @Synchronized

@@ -123,6 +123,7 @@ class MainActivity : ComponentActivity() {
                         onSendFiles = { pickFiles.launch(arrayOf("*/*")) }, onSendFolder = { pickFolder.launch(null) },
                         onReceive = { m.startListening(); screen = "receive" }, onConnect = { screen = "connect" },
                         onReconnect = m::reconnect, onForget = m::forget, onDisconnect = m::disconnect, onCancel = m::cancel,
+                        onRemove = { g.history.remove(it); historyVersion++ },
                         onSettings = { screen = "settings" }, onDismissError = m::disconnect)
                 }
             }

@@ -116,6 +116,10 @@ not affected, because it clears incoming transfers before closing files.
 
 ## Not tested / limitations
 
+* **v1.1.0 UI redesign:** the new Mac window was reviewed in a screenshot by the user (dark mode, history
+  data). The redesigned Android home screen compiles but has not been seen on a phone yet; nor have
+  light mode on the Mac or an active transfer in the new list.
+
 * **UI partly verified** (above). Drag-and-drop onto the Mac window, Settings screens on
   both sides, the Share sheet and transfers of folders through the UI were not exercised
   manually.

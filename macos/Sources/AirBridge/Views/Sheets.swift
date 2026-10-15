@@ -1,4 +1,5 @@
 import AirBridgeCore
+import Combine
 import CoreImage.CIFilterBuiltins
 import SwiftUI
 
@@ -141,7 +142,13 @@ struct OfferSheet: View {
     }
 }
 
+/// Settings window (⌘,).
 struct SettingsView: View {
+    var body: some View { SettingsForm().frame(width: 520, height: 420) }
+}
+
+/// Shared by the Settings window and the Settings page in the main window.
+struct SettingsForm: View {
     @EnvironmentObject var model: AppModel
 
     var body: some View {
@@ -177,6 +184,6 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 420)
+        .scrollDisabled(true)
     }
 }
