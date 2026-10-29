@@ -2,7 +2,7 @@
 
 ## Why Did Previous Transfers Cap at ~20 MB/s?
 
-In initial testing of DropBridge and default tools, transfers were often throttled around 15–20 MB/s due to four bottlenecks:
+In standard Wi-Fi configurations without socket and pipeline tuning, transfers are often throttled around 15–20 MB/s due to four bottlenecks:
 1. **Small TCP Socket Buffers (Bandwidth-Delay Product bottleneck)**: Default macOS/BSD socket buffers (64–128 KB) throttle TCP window scaling on high-throughput links.
 2. **Nagle's Algorithm (Delayed ACKs)**: Delayed-ACK timer (up to 40 ms) paused small control and stream frames.
 3. **Unbuffered 8 KB Reads & Small Synchronous Disk Writes**: Processing data through default 8 KB `BufReader` and unbuffered `std::fs::File` forced thousands of kernel context switches and blocked Tokio worker threads.
