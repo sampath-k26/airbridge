@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- AirBridge uses raw TCP with its own authenticated encryption, never HTTP.
-     Cleartext HTTP stays disabled. -->
-<network-security-config>
-    <base-config cleartextTrafficPermitted="false" />
-</network-security-config>

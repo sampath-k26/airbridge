@@ -1,125 +1,58 @@
-# Installation
+# Installation Guide
 
-## Requirements
+AirBridge is a zero-app bridge: **no app is needed on your Android phone**. You only install the lightweight AirBridge utility on your Mac.
 
-| | Minimum | Tested |
-|---|---|---|
-| Android | 10 (API 29) | Moto G54 5G, Android 15 |
-| macOS | 14 Sonoma | MacBook Air M4, macOS 27.0.1 |
-| Build: Android | JDK 17+, Android SDK platform 37.1 (compileSdk), build-tools 35+ | JDK 21, AGP 9.4.1, Gradle 9.7.1, Kotlin 2.4.21 |
-| Build: macOS | Xcode with Swift 6 toolchain | Xcode 27.0, Swift 6.4 |
+---
 
-No accounts, cloud services or paid tools are needed.
+## Method 1: One-Line Terminal Install (Recommended)
 
-## Prebuilt downloads
-
-Each GitHub release has:
-
-* **`AirBridge-<version>.apk`**: Android app, signed release build. On the phone, open
-  the file and allow *Install unknown apps* for your browser or file manager when asked.
-* **`AirBridge-<version>.dmg`**: macOS app. Open it and drag AirBridge to Applications.
-  The app is not notarized, so the first time right-click it → **Open** → **Open**, or use
-  System Settings → Privacy & Security → **Open Anyway**.
-* **`SHA256SUMS.txt`**: check the downloads with `shasum -a 256 -c SHA256SUMS.txt`.
-
-## Android app
-
-### Build
+Run this single command in your macOS Terminal:
 
 ```bash
-cd android
-./gradlew :app:assembleDebug            # → app/build/outputs/apk/debug/app-debug.apk
+curl -fsSL https://raw.githubusercontent.com/sunkaramahesh09/airbridge/main/install.sh | bash
 ```
 
-`local.properties` must point at the SDK (`sdk.dir=/Users/<you>/Library/Android/sdk`);
-Android Studio creates it automatically.
+### What this does:
+1. Detects your Mac hardware (Apple Silicon `arm64` or Intel `x86_64`).
+2. Downloads the prebuilt binary and places it in your system PATH (`/usr/local/bin` or `~/.local/bin`).
+3. Clears macOS Gatekeeper quarantine flags automatically.
+4. Sets up a background LaunchAgent (`~/Library/LaunchAgents/com.sunkaramahesh.airbridge.plist`) so AirBridge starts automatically on login and operates on-demand with AirDrop.
 
-### Install on the Moto G54
+---
 
-1. On the phone: **Settings → About phone →** tap **Build number** 7 times.
-2. **Settings → System → Developer options → USB debugging: on.**
-3. Connect the USB cable, accept *Allow USB debugging* (tick *Always allow*).
-4. On the Mac:
+## Method 2: Homebrew
+
+If you use Homebrew:
 
 ```bash
-~/Library/Android/sdk/platform-tools/adb devices          # shows ZD22…  device
-~/Library/Android/sdk/platform-tools/adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+# Tap and install
+brew install sunkaramahesh09/tap/airbridge
+
+# Start as a background service
+brew services start airbridge
 ```
 
-### Permissions (asked at the moment they are needed)
+---
 
-| Permission | Why |
-|---|---|
-| Notifications (Android 13+) | Progress notification for transfers that continue with the screen off |
-| Camera | Scanning the pairing QR code (only on the Connect screen) |
-| Nearby Wi-Fi devices (13+) / Location (10–12) | Only for the optional in-app Local-Only Hotspot |
-| (automatic) Internet, network/Wi-Fi state, wake lock, foreground service | Local TCP connection, Wi-Fi lock during transfers |
+## Method 3: Build from Source
 
-No storage permission is requested: files you send are chosen with the system picker,
-and received files go to **Download/AirBridge** through MediaStore (or a folder you pick
-in Settings).
-
-### Release build
-
-The build signs the release APK when it finds a keystore properties file, either
-`~/.airbridge/keystore.properties` or the path in `AIRBRIDGE_KEYSTORE_PROPERTIES`:
-
-```properties
-storeFile=/Users/you/.airbridge/release.jks
-storePassword=…
-keyAlias=airbridge
-keyPassword=…
-```
-
-Create your own key once and keep it and its password outside the repository, backed up.
-Updates must be signed with the same key:
+If you have Rust installed:
 
 ```bash
-keytool -genkeypair -v -keystore ~/.airbridge/release.jks -alias airbridge -keyalg EC -groupname secp256r1 -validity 10000
-./gradlew :app:assembleRelease          # → app/build/outputs/apk/release/app-release.apk (R8-minified, ~4 MB)
+git clone https://github.com/sunkaramahesh09/airbridge.git
+cd airbridge
+cargo build --release
+sudo cp target/release/airbridge /usr/local/bin/
 ```
 
-Without the properties file the output is `app-release-unsigned.apk`.
+---
 
-A release APK cannot be installed over a debug install signed with a different key.
-Uninstall first (`adb uninstall com.mahi.airbridge`); this deletes pairings.
+## Verifying the Installation
 
-## macOS app
+Run the built-in diagnostic tool:
 
 ```bash
-scripts/build-macos-app.sh              # → macos/dist/AirBridge.app (release, ad-hoc signed)
-scripts/make-dmg.sh 1.1.0               # → dist/AirBridge-1.1.0.dmg (drag-to-Applications image)
-open macos/dist/AirBridge.app
+airbridge doctor
 ```
 
-Or copy `AirBridge.app` to `/Applications`.
-
-* **Signing:** the app is **ad-hoc signed** (no Apple Developer ID) and **not notarized**.
-  On the Mac that built it, it opens normally. On another Mac, Gatekeeper blocks it:
-  right-click → **Open** → **Open**, or *System Settings → Privacy & Security → Open
-  Anyway*. Distribution to other people would need a Developer ID certificate and
-  `xcrun notarytool`.
-* **Local Network permission:** the first time AirBridge connects, macOS asks to allow
-  it to find devices on the local network — choose **Allow** (System Settings → Privacy &
-  Security → Local Network).
-* **Keychain:** the device identity is stored in the login keychain. Because each
-  ad-hoc build has a new code signature, macOS may ask once to let a rebuilt AirBridge
-  access its key; choose *Always Allow*.
-* Firewall: if the macOS firewall is on, allow incoming connections for AirBridge when
-  asked (the phone connects to the Mac's port 47820).
-* Not sandboxed: AirBridge writes to the folder you choose (default `~/Downloads/AirBridge`).
-
-## Command-line peers (developers)
-
-```bash
-cd macos && swift build -c release --product airbridge-cli        # Swift CLI
-cd android && ./gradlew :core:installDist                          # JVM CLI: core/build/install/airbridge-jvm/bin/airbridge-jvm
-```
-
-Both print one JSON object per line and accept `listen|dial`, `--send`, `--expect`,
-`--chunk`, `--code`, `--uri`, `--state`, `--dir` (see `scripts/interop-test.sh`).
-
-## First connection
-
-See README → *Pairing*. In short: phone hotspot on → Mac joins it → Mac:
-**Pair New Device** → phone: **Connect to Mac** → scan → confirm the verification number.
+If macOS displays a prompt asking for **Local Network** access, click **Allow**.
