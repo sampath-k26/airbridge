@@ -56,3 +56,36 @@ airbridge doctor
 ```
 
 If macOS displays a prompt asking for **Local Network** access, click **Allow**.
+
+---
+
+## Uninstall / Revert
+
+To completely remove AirBridge and revert your system:
+
+### Option 1: One-Line Terminal Uninstall
+```bash
+curl -fsSL https://raw.githubusercontent.com/sunkaramahesh09/airbridge/main/uninstall.sh | bash
+```
+
+### Option 2: Homebrew Uninstall
+```bash
+brew services stop airbridge
+brew uninstall airbridge
+rm -rf ~/Library/Application\ Support/airbridge ~/Library/Caches/airbridge
+```
+
+### Option 3: Manual Removal
+1. Stop and remove the LaunchAgent:
+   ```bash
+   launchctl unload ~/Library/LaunchAgents/com.sunkaramahesh.airbridge.plist 2>/dev/null || true
+   rm -f ~/Library/LaunchAgents/com.sunkaramahesh.airbridge.plist
+   ```
+2. Remove the binary:
+   ```bash
+   rm -f /usr/local/bin/airbridge ~/.local/bin/airbridge /opt/homebrew/bin/airbridge
+   ```
+3. Remove data and certificates:
+   ```bash
+   rm -rf ~/Library/Application\ Support/airbridge ~/Library/Caches/airbridge /tmp/airbridge.log /tmp/airbridge.err
+   ```

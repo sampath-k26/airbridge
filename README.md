@@ -40,6 +40,32 @@ scripts/build.sh
 
 ---
 
+## 🗑️ Uninstall / Revert
+
+To completely remove AirBridge and restore your Mac to its default state:
+
+### One-Line Terminal Uninstall
+```bash
+curl -fsSL https://raw.githubusercontent.com/sunkaramahesh09/airbridge/main/uninstall.sh | bash
+```
+
+### Homebrew Uninstall
+```bash
+brew services stop airbridge
+brew uninstall airbridge
+rm -rf ~/Library/Application\ Support/airbridge ~/Library/Caches/airbridge
+```
+
+### Manual Revert
+```bash
+launchctl unload ~/Library/LaunchAgents/com.sunkaramahesh.airbridge.plist 2>/dev/null || true
+rm -f ~/Library/LaunchAgents/com.sunkaramahesh.airbridge.plist
+rm -f /usr/local/bin/airbridge ~/.local/bin/airbridge
+rm -rf ~/Library/Application\ Support/airbridge ~/Library/Caches/airbridge
+```
+
+---
+
 ## 📱 Quick Setup (Once)
 
 1. **On your Android Phone**:
