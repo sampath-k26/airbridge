@@ -27,7 +27,6 @@ impl Key {
         self.clone()
     }
 
-impl Key {
     fn new(data: Vec<u8>) -> Self {
         let hk = Hkdf::<Sha256>::new(None, &data);
         let (mut token, mut name_key) = ([0u8; 16], [0u8; 16]);
