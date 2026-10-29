@@ -39,7 +39,7 @@ pub fn bind() -> Result<TcpListener> {
     // Enlarge socket buffers to 4 MB to maximize Wi-Fi throughput and prevent BDP bottlenecks
     let _ = s.set_recv_buffer_size(4 * 1024 * 1024);
     let _ = s.set_send_buffer_size(4 * 1024 * 1024);
-    let _ = s.set_nodelay(true);
+    let _ = s.set_tcp_nodelay(true);
     let on: libc::c_int = 1;
     // SAFETY: setsockopt with a valid fd and an int-sized option value.
     let rc = unsafe {

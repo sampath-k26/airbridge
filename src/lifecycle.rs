@@ -87,6 +87,7 @@ impl AirDropWatcher {
             libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK);
         }
 
+        #[allow(deprecated)]
         let async_fd = AsyncFd::new(fd).context("AsyncFd creation for notify fd")?;
         Ok(Self { async_fd, token1, token2 })
     }

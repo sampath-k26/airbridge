@@ -6,7 +6,6 @@
 //! different Wi-Fi networks (or phone is on 5G/cellular) with no shared router or hotspot.
 
 use std::collections::HashMap;
-use std::ffi::{c_char, c_void, CStr, CString};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -79,7 +78,6 @@ impl BLEProximityScanner {
     pub fn start(&self) -> Result<mpsc::Receiver<BLEEvent>> {
         let (tx, rx) = mpsc::channel(32);
         let discovered = self.discovered.clone();
-        let threshold = self.desk_rssi_threshold;
 
         tokio::spawn(async move {
             let mut check_interval = tokio::time::interval(Duration::from_secs(3));

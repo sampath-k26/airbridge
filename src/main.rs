@@ -461,7 +461,7 @@ async fn show_qr(qr: qr::Key, _files: Vec<PathBuf>) -> Result<()> {
     Ok(())
 }
 
-async fn run_doctor(names: names::Names, _qr: qr::Key) -> Result<()> {
+async fn run_doctor(_names: names::Names, _qr: qr::Key) -> Result<()> {
     let mode = lifecycle::current_mode();
     let awdl = bonjour::awdl_address().is_some();
     let hotspot = hotspot::get_default_gateway();
