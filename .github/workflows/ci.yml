@@ -21,7 +21,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Install Protoc
-        run: brew install protobuf
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify Protoc
+        run: |
+          echo "PROTOC=$(which protoc)" >> $GITHUB_ENV
+          protoc --version
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
       - name: Build AirBridge
