@@ -26,7 +26,8 @@ If you use Homebrew:
 
 ```bash
 # Tap and install
-brew install sunkaramahesh09/tap/airbridge
+brew tap sunkaramahesh09/airbridge https://github.com/sunkaramahesh09/airbridge
+brew install airbridge
 
 # Start as a background service
 brew services start airbridge

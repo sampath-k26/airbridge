@@ -6,9 +6,11 @@ class Airbridge < Formula
   head "https://github.com/sunkaramahesh09/airbridge.git", branch: "main"
 
   depends_on "rust" => :build
+  depends_on "protobuf" => :build
   depends_on :macos
 
   def install
+    ENV["PROTOC"] = Formula["protobuf"].opt_bin/"protoc"
     system "cargo", "install", *std_cargo_args
   end
 

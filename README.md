@@ -26,7 +26,8 @@ This automatically downloads the prebuilt binary, installs it to your system PAT
 ### Option 2: Homebrew
 
 ```bash
-brew install sunkaramahesh09/tap/airbridge
+brew tap sunkaramahesh09/airbridge https://github.com/sunkaramahesh09/airbridge
+brew install airbridge
 brew services start airbridge
 ```
 

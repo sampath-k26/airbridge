@@ -82,15 +82,46 @@ if [ "$DOWNLOAD_SUCCESS" = true ] && [ -f "$TEMP_DIR/$BINARY_NAME" ]; then
     mv "$TEMP_DIR/$BINARY_NAME" "$TARGET_BIN"
     chmod +x "$TARGET_BIN"
 else
-    echo -e "${YELLOW}Prebuilt release asset not found. Building from source with Cargo...${RESET}"
+    echo -e "${YELLOW}Prebuilt release asset not found. Building from source...${RESET}"
+    
+    # 1. Ensure Rust / Cargo is installed
+    if ! command -v cargo >/dev/null 2>&1; then
+        if command -v brew >/dev/null 2>&1; then
+            echo -e "${BLUE}Cargo not found. Installing Rust via Homebrew...${RESET}"
+            brew install rust
+        else
+            echo -e "${BLUE}Cargo not found. Installing Rust via rustup...${RESET}"
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            if [ -f "$HOME/.cargo/env" ]; then
+                source "$HOME/.cargo/env"
+            fi
+        fi
+    fi
+
+    # 2. Ensure Protobuf compiler (protoc) is installed for rqs_lib
+    if ! command -v protoc >/dev/null 2>&1; then
+        if command -v brew >/dev/null 2>&1; then
+            echo -e "${BLUE}Installing Protobuf (required for Quick Share protocol) via Homebrew...${RESET}"
+            brew install protobuf
+        fi
+    fi
+
+    if command -v brew >/dev/null 2>&1 && [ -f "$(brew --prefix protobuf 2>/dev/null)/bin/protoc" ]; then
+        export PROTOC="$(brew --prefix protobuf)/bin/protoc"
+    elif command -v protoc >/dev/null 2>&1; then
+        export PROTOC="$(which protoc)"
+    fi
+
     if command -v cargo >/dev/null 2>&1; then
+        echo -e "${BLUE}Compiling AirBridge with Cargo...${RESET}"
         cargo install --git "https://github.com/$REPO.git" --bin "$BINARY_NAME" --root "$TEMP_DIR"
         mv "$TEMP_DIR/bin/$BINARY_NAME" "$TARGET_BIN"
         chmod +x "$TARGET_BIN"
     else
-        echo -e "${RED}Error: Neither a prebuilt release nor Cargo was found.${RESET}"
+        echo -e "${RED}Error: Unable to install Rust/Cargo automatically.${RESET}"
         echo "Please install Rust (https://rustup.rs) or install via Homebrew:"
-        echo "  brew install $REPO/tap/airbridge"
+        echo "  brew tap $REPO https://github.com/$REPO"
+        echo "  brew install airbridge"
         exit 1
     fi
 fi
