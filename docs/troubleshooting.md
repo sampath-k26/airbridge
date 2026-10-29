@@ -1,85 +1,35 @@
 # Troubleshooting
 
-### "Could not connect" / the phone never reaches the Mac
+### 1. Phone Not Showing Up in Finder's AirDrop
 
-1. **Are both devices on the same network?** The Mac's Wi-Fi menu must show the phone's
-   hotspot (or the same Wi-Fi as the phone). AirBridge never uses mobile data or the
-   internet.
-2. **Router client isolation.** Many home routers block device-to-device traffic. Test:
-   `ping <phone-ip>` from the Mac. If it fails, use the phone's hotspot instead (this was
-   the case on the router used for development — see `networking-feasibility.md`).
-3. **Is AirBridge open on the Mac?** The Mac listens only while the app runs. Its window
-   header shows `waiting on <ip> port 47820`.
-4. **macOS Local Network permission** denied → System Settings → Privacy & Security →
-   Local Network → enable AirBridge.
-5. **Firewall:** allow incoming connections for AirBridge.
-6. The address changed (new hotspot session): tap the paired Mac to reconnect — AirBridge
-   tries the last address and Bonjour discovery — or scan a new QR code.
+* **The phone's screen is off**: Android hides Quick Share discovery while the device is locked/sleeping. Unlock your phone and ensure the screen is awake.
+* **Quick Share visibility is disabled**: On your phone, go to **Settings → Google → Quick Share** and ensure *Who can share with you* is set to **Everyone**.
+* **AirDrop is disabled on your Mac**: In macOS Control Center or Finder, ensure AirDrop is set to **Contacts Only** or **Everyone** (not "No One" / Off).
+* **Local Network permission blocked**: On your Mac, navigate to **System Settings → Privacy & Security → Local Network** and ensure `airbridge` is allowed.
+* **Phone appears as "Android phone [number]"**: Some Android phones hide their device name in broadcast packets. Run `airbridge qr` and scan the QR code once with your phone's camera, or send a single file from the phone to the Mac; AirBridge will permanently remember its device name.
 
-### The Mac app's window does not appear / it does not listen
+---
 
-At launch AirBridge reads its device key from the login Keychain. macOS may show a
-Keychain prompt first ("AirBridge wants to use your confidential information…"). Enter
-your login password and click **Always Allow**. The window appears only after you answer.
-Because the app is ad-hoc signed, every rebuild looks like a new app to the Keychain and
-asks again.
+### 2. Slow Transfer Speeds (Below 100 MB/s)
 
-### A transfer from the Mac stays at 0 %
+* **Wi-Fi Band**: Check if either your phone or Mac is connected to the 2.4 GHz Wi-Fi band. 2.4 GHz has a physical limit of ~6–7 MB/s. Always connect to the **5 GHz or 6 GHz** band.
+* **Router Channel Width**: In your router settings, ensure 5 GHz channel width is set to **80 MHz or 160 MHz** (enables 866–2400 Mbps PHY rates).
+* **Hotspot Speed**: If using a phone mobile hotspot, switch the hotspot from 2.4 GHz to **5 GHz** in Android Hotspot settings.
+* **Wi-Fi Power Saving**: On Samsung One UI or Pixel devices, turn off *Wi-Fi Power Saving Mode* in Advanced Wi-Fi settings during large file transfers.
 
-If the file is in **iCloud Drive** (including Desktop & Documents with *Optimise Mac
-Storage*) and not downloaded, its contents are not on the Mac. Reading it makes macOS
-download it first, which never finishes on a hotspot without internet. AirBridge now
-detects such files before sending. It shows *Not downloaded from iCloud yet* and asks macOS
-to download them. Fix: in Finder, right-click → **Download Now** while on normal Wi-Fi,
-then send again. (Found during the first manual UI test, 2026-10-14.)
+---
 
-### Pairing errors
+### 3. Running Diagnostics
 
-| Message | Meaning / fix |
-|---|---|
-| *The pairing code expired or was already used* | Codes last 5 minutes and work once. Click **New Code** on the Mac. |
-| *Authentication failed* | Wrong code, a different Mac answered, or the Mac's key changed (app reinstalled / Keychain reset). Remove the device on both sides and pair again. |
-| *Pairing was declined* | Someone clicked Decline (or the 90 s approval window passed). |
-| Verification numbers differ | **Do not pair.** Something is intercepting the connection. |
+Run the diagnostic utility in your terminal:
 
-### Slow transfers
+```bash
+airbridge doctor
+```
 
-* The hotspot band is the main factor. On the Moto G54: **Hotspot → Speed &
-  compatibility → 5 GHz** (measured: 2.4 GHz caps at ≈ 6 MB/s, 5 GHz reaches 31–43 MB/s).
-* Keep the devices within a few metres; walls and 2.4 GHz congestion lower the rate.
-* Check the Mac's link: hold ⌥ and click the Wi-Fi menu → *Tx Rate*.
-* Chunk size (Settings) has no measurable effect on Wi-Fi; keep 1 MiB.
-
-### Transfer interrupted
-
-* The connection dropped (Wi-Fi off, out of range, app killed). The partial file is kept
-  for 24 h. When the devices reconnect — the phone retries automatically for 2 minutes,
-  or tap the paired device — the same transfer resumes from where it stopped and is
-  fully re-verified.
-* Restarting the **sending** app forgets its queue; send the files again (the receiver
-  then starts a new copy).
-
-### "Integrity check failed"
-
-The received data did not match the sender's SHA-256 and was discarded (nothing is
-published). Retry. Repeated failures point to failing storage on the receiver.
-
-### "Not enough free space"
-
-The receiver checks free space before accepting. Free up space or choose another
-destination folder.
-
-### Where are my files?
-
-* Android: **Files → Downloads → AirBridge** (or the folder chosen in Settings).
-  Name conflicts get ` (1)`, ` (2)`, … — nothing is ever overwritten.
-* macOS: `~/Downloads/AirBridge` (Settings → *Save files to*). Use **Show in Finder**
-  on a finished transfer.
-
-### Developer diagnostics
-
-* Android logs: `adb logcat -s AirBridge AirBridgeNsd AirBridgeTest` (no keys, codes or
-  file contents are logged).
-* macOS: run `macos/dist/AirBridge.app/Contents/MacOS/AirBridge` from Terminal.
-* Protocol-level debugging: the CLIs (`airbridge-cli`, `airbridge-jvm`) print JSON
-  events; `scripts/interop-test.sh` checks Swift ⇄ Kotlin compatibility.
+It verifies:
+1. macOS AirDrop discoverable state (`Everyone` / `Contacts Only`).
+2. AWDL (`awdl0`) interface health.
+3. Local Wi-Fi network detection.
+4. Mobile hotspot gateway auto-detection.
+5. Bluetooth Low Energy desk proximity scanner status.
