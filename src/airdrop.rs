@@ -74,7 +74,8 @@ pub async fn serve(listener: TcpListener, tls: TlsAcceptor, rx: Arc<Receiver>) {
         };
         // Serve only this Mac's Finder. AWDL reaches nearby Macs too, and their files would pass
         // through this Mac; refusing them also keeps the phone out of their AirDrop list.
-        let own = from.ip().is_loopback() || matches!(from.ip(), IpAddr::V6(ip) if Some(ip) == crate::bonjour::awdl_address());
+        let own = from.ip().is_loopback()
+            || matches!(from.ip(), IpAddr::V6(ip) if crate::bonjour::is_own_awdl_address(&ip));
         if !own {
             log::debug!("ignoring AirDrop connection from another Mac at {from}");
             continue;

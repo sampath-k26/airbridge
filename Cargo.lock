@@ -53,6 +53,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "airbridge"
+version = "2.0.0"
+dependencies = [
+ "aes-gcm",
+ "anyhow",
+ "base64 0.23.1",
+ "flate2",
+ "hkdf",
+ "libc",
+ "log",
+ "mdns-sd",
+ "p256",
+ "plist",
+ "qrcode",
+ "rqs_lib",
+ "rustls",
+ "rustls-pemfile",
+ "sha2",
+ "socket2 0.6.5",
+ "tokio",
+ "tokio-rustls",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -311,31 +336,6 @@ dependencies = [
  "option-ext",
  "redox_users",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "airbridge"
-version = "2.0.0"
-dependencies = [
- "aes-gcm",
- "anyhow",
- "base64 0.23.1",
- "flate2",
- "hkdf",
- "libc",
- "log",
- "mdns-sd",
- "p256",
- "plist",
- "qrcode",
- "rqs_lib",
- "rustls",
- "rustls-pemfile",
- "sha2",
- "socket2 0.6.5",
- "tokio",
- "tokio-rustls",
- "tracing-subscriber",
 ]
 
 [[package]]

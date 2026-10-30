@@ -38,6 +38,9 @@ const USAGE: &str = "\
 airbridge: seamless AirDrop ↔ Quick Share bridge for macOS and Android
 
 USAGE: airbridge [--auto-accept] [--download-dir <path>] [--always-on]
+       airbridge start       start the background service
+       airbridge stop        stop the background service and running bridge
+       airbridge status      show bridge running state and AirDrop mode
        airbridge doctor      check setup, AirDrop status, Wi-Fi, Hotspot, and reach
        airbridge qr [<file>...]
                              show a QR code to scan on a phone that doesn't show up in AirDrop;
@@ -45,12 +48,15 @@ USAGE: airbridge [--auto-accept] [--download-dir <path>] [--always-on]
 
   --auto-accept          accept incoming Quick Share files without asking
   --download-dir <path>  where incoming files go (default: ~/Downloads)
-  --always-on            run continuously instead of sleeping when AirDrop is turned off
+  --always-on            run continuously instead of stopping when AirDrop is turned off
 
-By default, AirBridge stays dormant with zero background CPU/network usage when AirDrop is Off,
-and activates automatically when AirDrop is turned on in macOS Settings, Control Center, or Finder.";
+By default, AirBridge operates on-demand with macOS AirDrop. When AirDrop is turned OFF
+or Finder AirDrop is closed, AirBridge cleanly deactivates all background tasks and stops.";
 
 struct Options {
+    start: bool,
+    stop: bool,
+    status: bool,
     doctor: bool,
     qr: bool,
     files: Vec<PathBuf>,
@@ -61,6 +67,9 @@ struct Options {
 
 fn parse_args() -> Result<Options> {
     let mut o = Options {
+        start: false,
+        stop: false,
+        status: false,
         doctor: false,
         qr: false,
         files: Vec::new(),
@@ -71,6 +80,9 @@ fn parse_args() -> Result<Options> {
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
         match a.as_str() {
+            "start" => o.start = true,
+            "stop" => o.stop = true,
+            "status" => o.status = true,
             "doctor" => o.doctor = true,
             "qr" => o.qr = true,
             "--auto-accept" => o.auto_accept = true,
@@ -91,6 +103,85 @@ fn parse_args() -> Result<Options> {
     Ok(o)
 }
 
+fn run_stop() -> Result<()> {
+    println!("Stopping AirBridge...");
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    let plist = format!("{home}/Library/LaunchAgents/com.sunkaramahesh.airbridge.plist");
+    if std::path::Path::new(&plist).exists() {
+        let _ = std::process::Command::new("/bin/launchctl")
+            .args(["unload", &plist])
+            .output();
+    }
+
+    // Kill any running airbridge processes except this one
+    let my_pid = std::process::id();
+    if let Ok(output) = std::process::Command::new("pgrep").args(["-x", "airbridge"]).output() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        for line in stdout.lines() {
+            if let Ok(pid) = line.trim().parse::<u32>() {
+                if pid != my_pid {
+                    unsafe { libc::kill(pid as libc::pid_t, libc::SIGTERM) };
+                }
+            }
+        }
+    }
+
+    println!("\x1b[1;32m✔ AirBridge service and background processes have been stopped.\x1b[0m");
+    Ok(())
+}
+
+fn run_start() -> Result<()> {
+    println!("Starting AirBridge...");
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    let plist = format!("{home}/Library/LaunchAgents/com.sunkaramahesh.airbridge.plist");
+    if std::path::Path::new(&plist).exists() {
+        let _ = std::process::Command::new("/bin/launchctl").args(["unload", &plist]).output();
+        let status = std::process::Command::new("/bin/launchctl")
+            .args(["load", &plist])
+            .status();
+        if let Ok(s) = status {
+            if s.success() {
+                println!("\x1b[1;32m✔ AirBridge background service loaded and activated!\x1b[0m");
+                return Ok(());
+            }
+        }
+    }
+    println!("No LaunchAgent plist found at ~/Library/LaunchAgents/com.sunkaramahesh.airbridge.plist.");
+    println!("Run 'install.sh' to register the LaunchAgent service, or run 'airbridge' directly.");
+    Ok(())
+}
+
+fn run_status() -> Result<()> {
+    let mode = lifecycle::current_mode();
+    let finder_active = lifecycle::is_finder_airdrop_active();
+    let awdl = bonjour::awdl_address().is_some();
+
+    let my_pid = std::process::id();
+    let mut running_pids = Vec::new();
+    if let Ok(output) = std::process::Command::new("pgrep").args(["-x", "airbridge"]).output() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        for line in stdout.lines() {
+            if let Ok(pid) = line.trim().parse::<u32>() {
+                if pid != my_pid {
+                    running_pids.push(pid);
+                }
+            }
+        }
+    }
+
+    println!("\n=== AirBridge Status ===");
+    if !running_pids.is_empty() {
+        println!("Process Status        : RUNNING (PID: {})", running_pids.iter().map(|p| p.to_string()).collect::<Vec<_>>().join(", "));
+    } else {
+        println!("Process Status        : STOPPED");
+    }
+    println!("macOS AirDrop Mode    : {:?}", mode);
+    println!("Finder AirDrop Active : {}", if finder_active { "Yes (Window Open)" } else { "No" });
+    println!("AWDL (awdl0) State    : {}", if awdl { "ACTIVE (OK)" } else { "INACTIVE" });
+    println!("========================\n");
+    Ok(())
+}
+
 struct Peer {
     name: String,
     addr: Arc<Mutex<String>>,
@@ -109,13 +200,34 @@ struct ActiveBridge {
     rqs: RQS,
     send_tx: mpsc::Sender<SendInfo>,
     disc: mpsc::Receiver<discovery::Event>,
+    disc_handle: discovery::DiscoveryHandle,
     peers: HashMap<std::net::Ipv4Addr, Peer>,
     inbound_handle: JoinHandle<()>,
+}
+
+impl ActiveBridge {
+    pub async fn stop(mut self) {
+        self.peers.clear();
+        self.inbound_handle.abort();
+        self.disc_handle.abort();
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        self.rqs.stop().await;
+    }
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let opts = parse_args()?;
+    if opts.stop {
+        return run_stop();
+    }
+    if opts.start {
+        return run_start();
+    }
+    if opts.status {
+        return run_status();
+    }
+
     if std::env::var_os("RUST_LOG").is_none() {
         let mdns = if opts.qr { "off" } else { "error" };
         std::env::set_var("RUST_LOG", format!("info,rqs_lib=warn,mdns_sd={mdns}"));
@@ -158,7 +270,7 @@ async fn main() -> Result<()> {
     let mut active: Option<ActiveBridge> = if should_run {
         Some(start_bridge(&opts, &qr, learn_tx.clone()).await?)
     } else {
-        log::info!("AirDrop is currently OFF. AirBridge is DORMANT (0% CPU, no background tasks).");
+        log::info!("AirDrop is currently OFF. AirBridge is waiting for AirDrop to activate (open Finder AirDrop or enable in Control Center)...");
         None
     };
 
@@ -170,23 +282,22 @@ async fn main() -> Result<()> {
             // Watch for changes in macOS AirDrop state
             Ok(new_mode) = watcher.wait_for_change(), if !opts.always_on => {
                 if new_mode != current_airdrop_mode {
-                    log::info!("macOS AirDrop discoverable mode changed: {:?} -> {:?}", current_airdrop_mode, new_mode);
+                    log::info!("macOS AirDrop state changed: {:?} -> {:?}", current_airdrop_mode, new_mode);
                     current_airdrop_mode = new_mode;
 
                     if current_airdrop_mode.is_active() && active.is_none() {
-                        log::info!("AirDrop turned ON -> Activating Quick Share bridge");
+                        log::info!("AirDrop turned ON / Finder AirDrop opened -> Activating Quick Share bridge");
                         match start_bridge(&opts, &qr, learn_tx.clone()).await {
                             Ok(b) => active = Some(b),
                             Err(e) => log::error!("Failed to activate bridge: {e:#}"),
                         }
                     } else if !current_airdrop_mode.is_active() && active.is_some() {
-                        log::info!("AirDrop turned OFF -> Deactivating bridge to eliminate background usage");
-                        if let Some(mut b) = active.take() {
-                            b.peers.clear();
-                            b.inbound_handle.abort();
-                            tokio::time::sleep(Duration::from_millis(200)).await;
-                            b.rqs.stop().await;
+                        log::info!("AirDrop turned OFF or stopped -> Deactivating bridge");
+                        if let Some(b) = active.take() {
+                            b.stop().await;
                         }
+                        log::info!("AirDrop stopped. AirBridge stopping cleanly.");
+                        break;
                     }
                 }
             }
@@ -218,10 +329,8 @@ async fn main() -> Result<()> {
     }
 
     log::info!("AirBridge stopping");
-    if let Some(mut b) = active.take() {
-        b.peers.clear();
-        tokio::time::sleep(Duration::from_millis(300)).await;
-        b.rqs.stop().await;
+    if let Some(b) = active.take() {
+        b.stop().await;
     }
     Ok(())
 }
@@ -233,13 +342,14 @@ async fn start_bridge(
 ) -> Result<ActiveBridge> {
     let mut rqs = RQS::new(Visibility::Visible, None, opts.download_dir.clone());
     let (send_tx, _) = rqs.run().await?;
-    let disc = discovery::start(qr.clone_key())?;
+    let (disc, disc_handle) = discovery::start(qr.clone_key())?;
     let inbound_handle = tokio::spawn(inbound(rqs.message_sender.clone(), opts.auto_accept, learn_tx));
     log::info!("Quick Share bridge active: scanning local Wi-Fi & mobile hotspot gateway...");
     Ok(ActiveBridge {
         rqs,
         send_tx,
         disc,
+        disc_handle,
         peers: HashMap::new(),
         inbound_handle,
     })
@@ -258,7 +368,6 @@ fn on_discovery(
         discovery::Event::DeskProximityFound { endpoint_id, name, rssi } => {
             let phone_name = name.unwrap_or_else(|| format!("Nearby Phone ({endpoint_id})"));
             log::info!("Mode 3 [Desk Proximity]: {phone_name} discovered via BLE (RSSI {rssi} dBm)");
-            // When on different networks, desk proximity acts as an AirDrop candidate
             return;
         }
         discovery::Event::DeskProximityLost { endpoint_id } => {
@@ -463,11 +572,13 @@ async fn show_qr(qr: qr::Key, _files: Vec<PathBuf>) -> Result<()> {
 
 async fn run_doctor(_names: names::Names, _qr: qr::Key) -> Result<()> {
     let mode = lifecycle::current_mode();
+    let finder_active = lifecycle::is_finder_airdrop_active();
     let awdl = bonjour::awdl_address().is_some();
     let hotspot = hotspot::get_default_gateway();
 
     println!("\n=== AirBridge Diagnostics ===");
     println!("macOS AirDrop Status  : {:?}", mode);
+    println!("Finder AirDrop Active : {}", if finder_active { "Yes (Window Open)" } else { "No" });
     println!("AWDL Interface (awdl0): {}", if awdl { "ACTIVE (OK)" } else { "INACTIVE (Wi-Fi off?)" });
     println!("Mode 1 (Wi-Fi LAN)    : Enabled (mDNS _FC9F5ED42C8A._tcp.local)");
     if let Some((gw, iface)) = hotspot {

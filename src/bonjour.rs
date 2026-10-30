@@ -166,14 +166,14 @@ fn check(err: i32, what: &str) -> Result<()> {
     Ok(())
 }
 
-/// This Mac's link-local IPv6 address on awdl0.
-pub fn awdl_address() -> Option<Ipv6Addr> {
-    let mut found = None;
+/// This Mac's link-local IPv6 addresses on awdl0.
+pub fn awdl_addresses() -> Vec<Ipv6Addr> {
+    let mut addrs = Vec::new();
     // SAFETY: standard getifaddrs walk; the list is freed before returning.
     unsafe {
         let mut ifs: *mut libc::ifaddrs = ptr::null_mut();
         if libc::getifaddrs(&mut ifs) != 0 {
-            return None;
+            return addrs;
         }
         let mut cur = ifs;
         while !cur.is_null() {
@@ -189,14 +189,23 @@ pub fn awdl_address() -> Option<Ipv6Addr> {
                 octets[2] = 0;
                 octets[3] = 0;
                 let a = Ipv6Addr::from(octets);
-                if a.segments()[0] & 0xffc0 == 0xfe80 {
-                    found = Some(a);
-                    break;
+                if a.segments()[0] & 0xffc0 == 0xfe80 && !addrs.contains(&a) {
+                    addrs.push(a);
                 }
             }
             cur = ifa.ifa_next;
         }
         libc::freeifaddrs(ifs);
     }
-    found
+    addrs
+}
+
+/// Primary link-local IPv6 address on awdl0.
+pub fn awdl_address() -> Option<Ipv6Addr> {
+    awdl_addresses().into_iter().next()
+}
+
+/// Check if a given IPv6 address belongs to this Mac's awdl0 interface.
+pub fn is_own_awdl_address(target: &Ipv6Addr) -> bool {
+    awdl_addresses().iter().any(|a| a == target)
 }

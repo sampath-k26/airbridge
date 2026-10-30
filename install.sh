@@ -147,8 +147,22 @@ cat <<EOF > "$PLIST_FILE"
     </array>
     <key>RunAtLoad</key>
     <true/>
-    <key>KeepAlive</key>
-    <true/>
+    <key>LaunchEvents</key>
+    <dict>
+        <key>com.apple.notifyd.matching</key>
+        <dict>
+            <key>com.apple.sharingd.DiscoverableModeChanged</key>
+            <dict>
+                <key>Notification</key>
+                <string>com.apple.sharingd.DiscoverableModeChanged</string>
+            </dict>
+            <key>com.apple.sharingd.FinderAirDropChanged</key>
+            <dict>
+                <key>Notification</key>
+                <string>com.apple.sharingd.FinderAirDropChanged</string>
+            </dict>
+        </dict>
+    </dict>
     <key>StandardOutPath</key>
     <string>/tmp/airbridge.log</string>
     <key>StandardErrorPath</key>
@@ -167,8 +181,11 @@ echo ""
 echo -e "Usage:"
 echo -e "  • ${BOLD}Finder AirDrop${RESET} : Your Android phone now appears directly in AirDrop!"
 echo -e "  • ${BOLD}Quick Share${RESET}    : Share any file from Android to this Mac with Quick Share."
+echo -e "  • ${BOLD}Status${RESET}         : Run '${GREEN}airbridge status${RESET}' to view current state."
+echo -e "  • ${BOLD}Stop Service${RESET}   : Run '${GREEN}airbridge stop${RESET}' to stop AirBridge."
+echo -e "  • ${BOLD}Start Service${RESET}  : Run '${GREEN}airbridge start${RESET}' to resume AirBridge."
 echo -e "  • ${BOLD}Diagnostics${RESET}    : Run '${GREEN}airbridge doctor${RESET}' to verify link and interfaces."
 echo ""
-echo -e "AirBridge operates ${BOLD}on-demand${RESET} with macOS AirDrop. When AirDrop is turned OFF,"
-echo -e "AirBridge automatically enters deep sleep with ${BOLD}0% background CPU${RESET}."
+echo -e "AirBridge operates ${BOLD}on-demand${RESET} with macOS AirDrop. When AirDrop is turned OFF"
+echo -e "or Finder AirDrop is closed, AirBridge automatically deactivates and stops running."
 echo ""

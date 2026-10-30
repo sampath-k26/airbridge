@@ -16,7 +16,6 @@ class Airbridge < Formula
 
   service do
     run [opt_bin/"airbridge"]
-    keep_alive true
     log_path var/"log/airbridge.log"
     error_log_path var/"log/airbridge.err"
   end

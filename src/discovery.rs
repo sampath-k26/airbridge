@@ -26,15 +26,31 @@ pub enum Event {
     Lost { ip: Ipv4Addr },
 }
 
-pub fn start(qr: qr::Key) -> Result<mpsc::Receiver<Event>> {
+pub struct DiscoveryHandle {
+    pub task: tokio::task::JoinHandle<()>,
+    pub ble_task: tokio::task::JoinHandle<()>,
+    pub daemon: ServiceDaemon,
+}
+
+impl DiscoveryHandle {
+    pub fn abort(&self) {
+        self.task.abort();
+        self.ble_task.abort();
+        let _ = self.daemon.stop_browse(SERVICE);
+        let _ = self.daemon.shutdown();
+    }
+}
+
+pub fn start(qr: qr::Key) -> Result<(mpsc::Receiver<Event>, DiscoveryHandle)> {
     let daemon = ServiceDaemon::new()?;
     let browse = daemon.browse(SERVICE)?;
     let (tx, rx) = mpsc::channel(32);
     let ble_scanner = ble::BLEProximityScanner::new(ble::DEFAULT_DESK_RSSI_THRESHOLD);
-    let mut ble_rx = ble_scanner.start()?;
+    let (mut ble_rx, ble_task) = ble_scanner.start()?;
 
-    tokio::spawn(async move {
-        let _daemon = daemon;
+    let daemon_clone = daemon.clone();
+    let task = tokio::spawn(async move {
+        let _daemon = daemon_clone;
         let mut by_ip: HashMap<Ipv4Addr, HashSet<String>> = HashMap::new();
         let mut leaving: HashMap<Ipv4Addr, Instant> = HashMap::new();
         let mut tick = tokio::time::interval(Duration::from_secs(5));
@@ -136,7 +152,7 @@ pub fn start(qr: qr::Key) -> Result<mpsc::Receiver<Event>> {
         }
     });
 
-    Ok(rx)
+    Ok((rx, DiscoveryHandle { task, ble_task, daemon }))
 }
 
 /// Device type 3 (laptop/desktop) in bits 1..3 of the endpoint info's first byte.

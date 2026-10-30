@@ -135,11 +135,15 @@ Known Devices         : saved in names.tsv
 =============================
 ```
 
-### Other CLI Options:
+### CLI Commands & Service Control:
+* `airbridge status`: View current background service status, process PID, macOS AirDrop mode, and Finder status.
+* `airbridge stop`: Completely stop the background service and any active AirBridge processes.
+* `airbridge start`: Start/resume the background service.
+* `airbridge doctor`: Run diagnostics on network interfaces, AirDrop link, and hotspot routing.
 * `airbridge --auto-accept`: Accept incoming Quick Share files without confirmation dialog.
 * `airbridge --download-dir <path>`: Customize destination folder (default: `~/Downloads`).
 * `airbridge qr [<file>...]`: Generate a terminal QR code for phones that hide their name.
-* `airbridge --always-on`: Run continuously instead of sleeping when AirDrop is turned off.
+* `airbridge --always-on`: Run continuously instead of stopping when AirDrop is turned off.
 
 ---
 

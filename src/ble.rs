@@ -75,11 +75,11 @@ impl BLEProximityScanner {
     }
 
     /// Starts scanning and sends proximity events over the channel.
-    pub fn start(&self) -> Result<mpsc::Receiver<BLEEvent>> {
+    pub fn start(&self) -> Result<(mpsc::Receiver<BLEEvent>, tokio::task::JoinHandle<()>)> {
         let (tx, rx) = mpsc::channel(32);
         let discovered = self.discovered.clone();
 
-        tokio::spawn(async move {
+        let handle = tokio::spawn(async move {
             let mut check_interval = tokio::time::interval(Duration::from_secs(3));
             loop {
                 check_interval.tick().await;
@@ -99,12 +99,14 @@ impl BLEProximityScanner {
                 }
 
                 for id in expired {
-                    let _ = tx.send(BLEEvent::DeviceLeft(id)).await;
+                    if tx.send(BLEEvent::DeviceLeft(id)).await.is_err() {
+                        return;
+                    }
                 }
             }
         });
 
-        Ok(rx)
+        Ok((rx, handle))
     }
 
     /// Record a BLE advertisement received by CoreBluetooth.
